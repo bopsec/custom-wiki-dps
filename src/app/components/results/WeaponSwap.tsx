@@ -92,7 +92,7 @@ const CustomTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({
             </div>
           ))}
           <div className="mt-1 flex justify-between w-44 gap-2 text-xs">
-            <span className="text-gray-500">Camp this weapon only</span>
+            <span className="text-gray-500">Camp this setup only</span>
             <span className="text-gray-400 font-bold">
               {point.weaponOnlySeconds.toFixed(2)}
               s
