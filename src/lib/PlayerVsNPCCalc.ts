@@ -73,6 +73,7 @@ import {
   AmmoApplicability,
   ammoApplicability,
   calculateAttackSpeed,
+  getHighestOffensiveStyle,
   WEAPON_SPEC_COSTS,
 } from '@/lib/Equipment';
 import BaseCalc, { CalcOpts, InternalOpts } from '@/lib/BaseCalc';
@@ -1282,6 +1283,18 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       return this.track(DetailKey.PLAYER_ACCURACY_FINAL, 1.0);
     }
 
+    if (this.monster.name === 'Acidic Araxyte' || this.monster.name === 'Mirrorback Araxyte') {
+      if (this.player.equipment.weapon?.name === 'Noxious halberd') {
+        return this.track(DetailKey.PLAYER_ACCURACY_FINAL, 1.0);
+      }
+      if (this.player.style.type === 'ranged' && getHighestOffensiveStyle(this.player.offensive) === 'ranged' && !this.isAmmoInvalid() && (this.wearing(['Heavy ballista', 'Light ballista']) || this.player.equipment.weapon?.category === EquipmentCategory.CROSSBOW)) {
+        return this.track(DetailKey.PLAYER_ACCURACY_FINAL, 1.0);
+      }
+      if (this.player.style.type === 'crush' && getHighestOffensiveStyle(this.player.offensive) === 'crush') {
+        return this.track(DetailKey.PLAYER_ACCURACY_FINAL, 1.0);
+      }
+    }
+
     const atk = this.getMaxAttackRoll();
     const def = this.getNPCDefenceRoll();
 
@@ -1573,6 +1586,18 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         ]),
         { transformInaccurate: false },
       );
+    }
+
+    if (this.monster.name === 'Acidic Araxyte' || this.monster.name === 'Mirrorback Araxyte') {
+      if (this.player.equipment.weapon?.name === 'Noxious halberd') {
+        return new AttackDistribution([HitDistribution.single(1.0, [new Hitsplat(max)])]);
+      }
+      if (style === 'ranged' && getHighestOffensiveStyle(this.player.offensive) === 'ranged' && (this.wearing(['Heavy ballista', 'Light ballista']) || this.player.equipment.weapon?.category === EquipmentCategory.CROSSBOW)) {
+        return new AttackDistribution([HitDistribution.single(1.0, [new Hitsplat(max)])]);
+      }
+      if (style === 'crush' && getHighestOffensiveStyle(this.player.offensive) === 'crush') {
+        return new AttackDistribution([HitDistribution.single(1.0, [new Hitsplat(max)])]);
+      }
     }
 
     const isMaggotKingMeleePunish = this.isUsingMeleeStyle() && MAGGOT_KING_ID.includes(this.monster.id) && this.monster.inputs.phase === 'Melee Punish';

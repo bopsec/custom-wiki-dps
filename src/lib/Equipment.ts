@@ -1,4 +1,9 @@
-import { EquipmentPiece, Player, PlayerEquipment } from '@/types/Player';
+import {
+  EquipmentPiece,
+  Player,
+  PlayerEquipment,
+  PlayerOffensive,
+} from '@/types/Player';
 import { Monster } from '@/types/Monster';
 import { keys } from '@/utils';
 import {
@@ -377,6 +382,16 @@ export const calculateEquipmentBonusesFromGear = (player: Player, monster: Monst
 
   return totals;
 };
+
+export const getHighestOffensiveStyle = (
+  offensive: PlayerOffensive,
+): keyof PlayerOffensive => (Object.keys(offensive) as (keyof PlayerOffensive)[]).reduce(
+  (highest, style) => (
+    offensive[style] > offensive[highest]
+      ? style
+      : highest
+  ),
+);
 
 /* eslint-disable quote-props */
 export const WEAPON_SPEC_COSTS: { [canonicalName: string]: number } = {
