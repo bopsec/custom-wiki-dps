@@ -44,6 +44,7 @@ interface SwapLoadout {
   calc: PlayerVsNPCCalc | null;
   speed: number;
   baseHistogram: Map<number, number>;
+  hpHistograms: Map<number, Map<number, number>>;
 }
 
 const MAX_OPTIMIZED_HP = 400;
@@ -134,9 +135,15 @@ const optimize = (
     let bestIx = 0;
 
     for (const [ix, swapLoadout] of swapLoadouts.entries()) {
-      const hist = swapLoadout.calc?.distIsCurrentHpDependent(swapLoadout.loadout, monster)
-        ? getHistogramAtHp(swapLoadout.loadout, monster, hp)
-        : swapLoadout.baseHistogram;
+      let hist = swapLoadout.baseHistogram;
+      if (swapLoadout.calc?.distIsCurrentHpDependent(swapLoadout.loadout, monster)) {
+        hist = swapLoadout.hpHistograms.get(hp) || getHistogramAtHp(
+          swapLoadout.loadout,
+          monster,
+          hp,
+        );
+        swapLoadout.hpHistograms.set(hp, hist);
+      }
       const missChance = hist.get(0) || 0;
 
       if (missChance >= 1) {
@@ -230,6 +237,7 @@ export const computeWeaponSwap = (
         calc,
         speed: calc?.getExpectedAttackSpeed() || 0,
         baseHistogram: histogramFromCalc(calc),
+        hpHistograms: new Map(),
       }];
     } catch (e: unknown) {
       console.warn(`Skipping loadout ${loadoutIndex + 1} during weapon swap calculation`, e);
