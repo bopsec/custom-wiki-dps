@@ -155,11 +155,13 @@ export const calculateCombatLevel = (s: PlayerSkills) => {
   return Math.floor(cbLevelDouble);
 };
 
-export const getWikiImage = (filename: string) => `https://oldschool.runescape.wiki/images/${filename.replaceAll(' ', '_')}?11111`;
+const encodePath = (path: string) => path.split('/').map(encodeURIComponent).join('/');
 
-export const getCdnImage = (filename: string) => `${CDN_BASE}/${filename}`;
+export const getWikiImage = (filename: string) => `https://oldschool.runescape.wiki/images/${encodeURIComponent(filename.replaceAll(' ', '_'))}?11111`;
 
-export const getUpstreamCdnImage = (filename: string) => `${UPSTREAM_CDN_BASE}/${filename}`;
+export const getCdnImage = (filename: string) => `${CDN_BASE}/${encodePath(filename)}`;
+
+export const getUpstreamCdnImage = (filename: string) => `${UPSTREAM_CDN_BASE}/${encodePath(filename)}`;
 
 export const isDevServer = () => process.env.NODE_ENV === 'development';
 
