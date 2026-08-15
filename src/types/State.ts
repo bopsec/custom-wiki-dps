@@ -84,6 +84,7 @@ export interface NPCVsPlayerCalculatedLoadout extends CalculatedLoadout {
 export interface Calculator {
   loadouts: (PlayerVsNPCCalculatedLoadout & NPCVsPlayerCalculatedLoadout)[]
   weaponSwap?: WeaponSwapResult | null,
+  weaponSwapError?: string | null,
 }
 
 /**

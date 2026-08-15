@@ -59,17 +59,20 @@ const computePvMValues: Handler<WorkerRequestType.COMPUTE_BASIC> = async (data) 
   }
 
   let weaponSwap = null;
+  let weaponSwapError: string | null = null;
   if (calcOpts.computeWeaponSwap) {
     try {
       weaponSwap = computeWeaponSwap(loadouts, monster, calcOpts) || null;
     } catch (e: unknown) {
       console.error('Weapon swap calculation failed', e);
+      weaponSwapError = e instanceof Error ? e.message : `Unknown error type: ${e}`;
     }
   }
 
   return {
     loadouts: res,
     weaponSwap,
+    weaponSwapError,
   };
 };
 

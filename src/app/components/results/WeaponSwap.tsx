@@ -110,6 +110,7 @@ const WeaponSwap: React.FC = observer(() => {
   const store = useStore();
   const { showWeaponSwap } = store.prefs;
   const result = toJS(store.calc.weaponSwap);
+  const swapError = store.calc.weaponSwapError;
   const loadouts = toJS(store.loadouts);
   const [mode, setMode] = useState(modeOptions[0]);
 
@@ -174,12 +175,22 @@ const WeaponSwap: React.FC = observer(() => {
         </div>
       )}
     >
-      {!result && (
+      {!result && !swapError && (
         <div
           className={`${warningClassName} border-b`}
         >
           <IconAlertTriangle className="text-orange-200" />
           <div>Add at least two non-spec loadouts to compute swap breakpoints.</div>
+        </div>
+      )}
+      {!result && swapError && (
+        <div className={`${warningClassName} border-b`}>
+          <IconAlertTriangle className="text-orange-200" />
+          <div>
+            Weapon swap calculation failed:
+            {' '}
+            {swapError}
+          </div>
         </div>
       )}
       {result && activeResult && (

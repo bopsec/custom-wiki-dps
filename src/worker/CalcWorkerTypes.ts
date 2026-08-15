@@ -92,6 +92,7 @@ export interface ComputeBasicResponse extends WorkerResponse<WorkerRequestType.C
   payload: {
     loadouts: Omit<PlayerVsNPCCalculatedLoadout, 'ttkDist'>[],
     weaponSwap: WeaponSwapResult | null,
+    weaponSwapError: string | null,
   },
 }
 
