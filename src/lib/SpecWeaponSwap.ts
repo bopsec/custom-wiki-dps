@@ -62,6 +62,12 @@ export interface SpecSwapResult {
   swap: SpecSwapModes;
 }
 
+export interface SpecSwapOutcomeOverride {
+  attackIndex: number;
+  mode: 'average' | 'damage' | 'hit' | 'miss';
+  damage?: number;
+}
+
 interface AttackCandidate extends SpecSwapAttack {
   speed: number;
   histogram: Map<number, number>;
@@ -412,6 +418,20 @@ const trimStates = (states: SpecState[]): SpecState[] => {
     .slice(0, MAX_STATE_COUNT);
 };
 
+const getAveragePositiveDamage = (histogram: Map<number, number>): number => {
+  let hitProbability = 0;
+  let weightedDamage = 0;
+  for (const [damage, probability] of histogram.entries()) {
+    if (damage <= 0) {
+      continue;
+    }
+    hitProbability += probability;
+    weightedDamage += damage * probability;
+  }
+
+  return hitProbability > 0 ? Math.round(weightedDamage / hitProbability) : 0;
+};
+
 const buildAttackCandidate = (
   loadout: Player,
   loadoutIndex: number,
@@ -481,6 +501,176 @@ const makeInitialState = (maxHp: number, reductions: DefenceReductions): SpecSta
   reductions: cloneReductions(reductions),
   probability: 1,
 }];
+
+const emptySwapModes = (): SpecSwapModes => ({
+  continuous: {
+    points: [],
+    ranges: [],
+    loadouts: [],
+  },
+  discontinuous: {
+    points: [],
+    ranges: [],
+    loadouts: [],
+  },
+});
+
+const getOutcomeOverride = (
+  overrides: SpecSwapOutcomeOverride[],
+  attackIndex: number,
+): SpecSwapOutcomeOverride => (
+  overrides.find((override) => override.attackIndex === attackIndex) || { attackIndex, mode: 'average' }
+);
+
+const applyOutcomeAttack = (
+  states: SpecState[],
+  attack: SpecSwapAttack,
+  attackIndex: number,
+  overrides: SpecSwapOutcomeOverride[],
+  getAttackCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => AttackCandidate | null,
+): SpecState[] => {
+  const override = getOutcomeOverride(overrides, attackIndex);
+  if (override.mode === 'average') {
+    return applyAttack(states, attack, getAttackCandidate);
+  }
+
+  const next = new Map<string, SpecState>();
+  for (const state of states) {
+    const attackState = getAttackCandidate(attack.loadoutIndex, state.hp, state.reductions);
+    if (!attackState) {
+      continue;
+    }
+
+    const damage = (() => {
+      if (override.mode === 'miss') {
+        return 0;
+      }
+      if (override.mode === 'hit') {
+        return getAveragePositiveDamage(attackState.histogram);
+      }
+      return Math.max(0, Math.min(attackState.maxHit, Math.round(override.damage || 0)));
+    })();
+    const remainingHp = Math.max(state.hp - damage, 0);
+    const reductions = applySpecDefenceReduction(state.reductions, attack.weaponName, damage);
+    const key = stateKey(remainingHp, reductions);
+    const existing = next.get(key);
+    if (existing) {
+      existing.probability += state.probability;
+    } else {
+      next.set(key, {
+        hp: remainingHp,
+        reductions,
+        probability: state.probability,
+      });
+    }
+  }
+
+  return [...next.values()];
+};
+
+export const computeSpecWeaponSwapGraph = (
+  loadouts: Player[],
+  monster: Monster,
+  attacks: SpecSwapAttack[],
+  overrides: SpecSwapOutcomeOverride[],
+): SpecSwapModes => {
+  const baseMonster = buildBaseMonster(monster);
+  const maxHp = baseMonster.skills.hp;
+  const initialReductions = cloneReductions(monster.inputs.defenceReductions);
+  const initialMonster = withDefenceReductions(baseMonster, maxHp, initialReductions);
+  const normalLoadouts = loadouts
+    .map((loadout, loadoutIndex) => ({ loadout, loadoutIndex }))
+    .filter(({ loadout }) => !loadout.specSetup);
+
+  const baseFinishers = normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
+    const finisher = buildFinishCandidate(loadout, loadoutIndex, initialMonster, maxHp);
+    return finisher ? [finisher] : [];
+  });
+
+  if (attacks.length === 0 || baseFinishers.length === 0) {
+    return emptySwapModes();
+  }
+
+  const attackCache = new Map<string, AttackCandidate | null>();
+  const getAttackCandidate = (
+    loadoutIndex: number,
+    hp: number,
+    reductions: DefenceReductions,
+  ): AttackCandidate | null => {
+    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}`;
+    if (!attackCache.has(key)) {
+      const loadout = loadouts[loadoutIndex];
+      const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
+      attackCache.set(key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
+    }
+    return attackCache.get(key) || null;
+  };
+
+  const finisherMemoryCache = new Map<string, Float64Array>();
+  const singleFinisherMemoryCache = new Map<string, Float64Array>();
+  const getFinishers = (reductions: DefenceReductions): FinishCandidate[] => {
+    const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
+    return normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
+      const finisher = buildFinishCandidate(loadout, loadoutIndex, stateMonster, maxHp);
+      return finisher ? [finisher] : [];
+    });
+  };
+  const getFinisherMemory = (reductions: DefenceReductions, continuous: boolean): Float64Array => {
+    const key = `${continuous ? 'c' : 'd'}|${reductionKey(reductions)}`;
+    if (!finisherMemoryCache.has(key)) {
+      finisherMemoryCache.set(key, buildFinisherMemory(getFinishers(reductions), maxHp, continuous));
+    }
+    return finisherMemoryCache.get(key)!;
+  };
+  const getSingleFinisherMemory = (
+    loadoutIndex: number,
+    reductions: DefenceReductions,
+    continuous: boolean,
+  ): Float64Array => {
+    const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}`;
+    if (!singleFinisherMemoryCache.has(key)) {
+      const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
+      const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster, maxHp);
+      singleFinisherMemoryCache.set(
+        key,
+        finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1),
+      );
+    }
+    return singleFinisherMemoryCache.get(key)!;
+  };
+
+  const states = attacks.reduce(
+    (currentStates, attack, attackIndex) => trimStates(applyOutcomeAttack(
+      currentStates,
+      attack,
+      attackIndex,
+      overrides,
+      getAttackCandidate,
+    )),
+    makeInitialState(maxHp, initialReductions),
+  );
+  const expectedHp = getExpectedHp(states);
+  const maxChartHp = Math.max(1, Math.ceil(expectedHp));
+
+  return {
+    continuous: getPostSpecSwapMode(
+      states,
+      baseFinishers,
+      getFinisherMemory,
+      getSingleFinisherMemory,
+      true,
+      maxChartHp,
+    ),
+    discontinuous: getPostSpecSwapMode(
+      states,
+      baseFinishers,
+      getFinisherMemory,
+      getSingleFinisherMemory,
+      false,
+      maxChartHp,
+    ),
+  };
+};
 
 export const computeSpecWeaponSwaps = (
   loadouts: Player[],

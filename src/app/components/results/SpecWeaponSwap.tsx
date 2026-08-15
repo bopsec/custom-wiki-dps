@@ -17,8 +17,14 @@ import { toJS } from 'mobx';
 import { useStore } from '@/state';
 import SectionAccordion from '@/app/components/generic/SectionAccordion';
 import NumberInput from '@/app/components/generic/NumberInput';
-import { computeSpecWeaponSwaps } from '@/lib/SpecWeaponSwap';
-import type { SpecSwapModes, SpecSwapRange } from '@/lib/SpecWeaponSwap';
+import { computeSpecWeaponSwapGraph, computeSpecWeaponSwaps } from '@/lib/SpecWeaponSwap';
+import type {
+  SpecSwapOutcomeOverride,
+  SpecSwapRange,
+  SpecSwapResult,
+} from '@/lib/SpecWeaponSwap';
+import type { Player } from '@/types/Player';
+import type { Monster } from '@/types/Monster';
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 
 enum SwapMode {
@@ -45,6 +51,16 @@ const warningClassName = [
 ].join(' ');
 
 const strokeColours = ['cyan', 'yellow', 'lime', 'orange', 'pink', '#8B9BE8'];
+const damageOverrideWeapons = ['Bandos godsword', 'Eye of ayak'];
+const hitMissOverrideWeapons = [
+  'Dragon warhammer',
+  'Elder maul',
+  'Arclight',
+  'Emberlight',
+  'Tonalztics of ralos',
+  'Accursed sceptre',
+  'Accursed sceptre (a)',
+];
 
 const formatRange = (range: SpecSwapRange): string => (
   range.fromHp === range.toHp
@@ -109,9 +125,39 @@ const CustomTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({
   return null;
 };
 
-const PostSpecSwapGraph: React.FC<{ swap: SpecSwapModes }> = ({ swap }) => {
+const getOverride = (
+  overrides: SpecSwapOutcomeOverride[],
+  attackIndex: number,
+): SpecSwapOutcomeOverride => (
+  overrides.find((override) => override.attackIndex === attackIndex) || { attackIndex, mode: 'average' }
+);
+
+const PostSpecSwapGraph: React.FC<{
+  loadouts: Player[],
+  monster: Monster,
+  result: SpecSwapResult,
+}> = ({ loadouts, monster, result }) => {
   const [mode, setMode] = useState(modeOptions[0]);
+  const [overrides, setOverrides] = useState<SpecSwapOutcomeOverride[]>([]);
+  const hasOverrides = overrides.length > 0;
+  const swap = useMemo(
+    () => (hasOverrides
+      ? computeSpecWeaponSwapGraph(loadouts, monster, result.attacks, overrides)
+      : result.swap),
+    [hasOverrides, loadouts, monster, overrides, result],
+  );
   const activeSwap = mode.value === SwapMode.CONTINUOUS ? swap.continuous : swap.discontinuous;
+  const outcomeControls = result.attacks
+    .map((attack, attackIndex) => ({ attack, attackIndex }))
+    .filter(({ attack }) => (
+      damageOverrideWeapons.includes(attack.weaponName)
+      || hitMissOverrideWeapons.includes(attack.weaponName)
+    ));
+  const updateOverride = (override: SpecSwapOutcomeOverride) => setOverrides((prev) => (
+    override.mode === 'average'
+      ? prev.filter((o) => o.attackIndex !== override.attackIndex)
+      : [...prev.filter((o) => o.attackIndex !== override.attackIndex), override]
+  ));
 
   const yDomainMax = useMemo(() => {
     const high = max(activeSwap.points, (point) => point.expectedSeconds) || 1;
@@ -138,6 +184,83 @@ const PostSpecSwapGraph: React.FC<{ swap: SpecSwapModes }> = ({ swap }) => {
 
   return (
     <div className="px-4 py-4 bg-body-200 dark:bg-dark-400">
+      {outcomeControls.length > 0 && (
+        <div className="mb-4 flex flex-col gap-3 text-sm text-black dark:text-body-200">
+          {outcomeControls.map(({ attack, attackIndex }) => {
+            const override = getOverride(overrides, attackIndex);
+            const averageDamage = Math.max(0, Math.min(attack.maxHit, Math.round(attack.expectedDamage)));
+            return (
+              <div key={`${attackIndex}-${attack.loadoutName}`} className="flex flex-wrap items-center gap-3">
+                <span className="min-w-32 font-bold">
+                  {attackIndex + 1}
+                  .
+                  {' '}
+                  {attack.loadoutName}
+                </span>
+                {damageOverrideWeapons.includes(attack.weaponName) && (
+                  <>
+                    <input
+                      type="range"
+                      min={0}
+                      max={attack.maxHit}
+                      value={override.mode === 'damage' ? override.damage || 0 : averageDamage}
+                      onChange={(e) => updateOverride({
+                        attackIndex,
+                        mode: 'damage',
+                        damage: Number(e.target.value),
+                      })}
+                      className="w-48"
+                    />
+                    <NumberInput
+                      id={`spec-swap-outcome-${attackIndex}`}
+                      aria-label={`${attack.loadoutName} damage`}
+                      className="form-control w-20"
+                      min={0}
+                      max={attack.maxHit}
+                      value={override.mode === 'damage' ? override.damage || 0 : averageDamage}
+                      onChange={(value) => updateOverride({
+                        attackIndex,
+                        mode: 'damage',
+                        damage: value,
+                      })}
+                    />
+                    <span className="text-xs text-gray-500 dark:text-gray-300">
+                      {override.mode === 'average' ? 'average' : `max ${attack.maxHit}`}
+                    </span>
+                  </>
+                )}
+                {hitMissOverrideWeapons.includes(attack.weaponName) && (
+                  <div className="flex gap-1">
+                    {(['average', 'hit', 'miss'] as const).map((outcome) => (
+                      <button
+                        key={outcome}
+                        type="button"
+                        onClick={() => updateOverride({ attackIndex, mode: outcome })}
+                        className={`px-3 py-1 border text-sm capitalize transition-colors ${
+                          override.mode === outcome
+                            ? 'bg-orange-400 dark:bg-orange-700 border-orange-500 text-white'
+                            : 'bg-btns-400 dark:bg-dark-500 border-body-100 dark:border-dark-300'
+                        }`}
+                      >
+                        {outcome}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {override.mode !== 'average' && (
+                  <button
+                    type="button"
+                    onClick={() => updateOverride({ attackIndex, mode: 'average' })}
+                    className="px-3 py-1 border text-sm bg-btns-400 dark:bg-dark-500 border-body-100 dark:border-dark-300"
+                  >
+                    Reset to average
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
       <ResponsiveContainer width="100%" height={250}>
         <LineChart
           data={chartData}
@@ -150,7 +273,7 @@ const PostSpecSwapGraph: React.FC<{ swap: SpecSwapModes }> = ({ swap }) => {
             dataKey="hitpoints"
             stroke="#777777"
             interval="equidistantPreserveStart"
-            label={{ value: 'Monster HP after expected specs', position: 'insideBottom', offset: -10 }}
+            label={{ value: hasOverrides ? 'Monster HP after selected specs' : 'Monster HP after expected specs', position: 'insideBottom', offset: -10 }}
           />
           <YAxis
             stroke="#777777"
@@ -383,7 +506,11 @@ const SpecWeaponSwap: React.FC = observer(() => {
                               {' '}
                               {i + 1}
                             </span>
-                            <PostSpecSwapGraph swap={result.swap} />
+                            <PostSpecSwapGraph
+                              loadouts={loadouts}
+                              monster={monster}
+                              result={result}
+                            />
                           </td>
                         </tr>
                       )}
