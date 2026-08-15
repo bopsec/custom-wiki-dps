@@ -59,7 +59,6 @@ export interface SpecSwapResult {
   expectedSeconds: number;
   finisherName: string;
   finisherSeconds: number;
-  swap: SpecSwapModes;
 }
 
 export interface SpecSwapOutcomeOverride {
@@ -800,22 +799,6 @@ export const computeSpecWeaponSwaps = (
 
   const finisherMemoryCache = new Map<string, Float64Array>();
   const singleFinisherMemoryCache = new Map<string, Float64Array>();
-  const finisherCandidateCache = new Map<string, FinishCandidate | null>();
-  const getFinisherCandidate = (
-    loadoutIndex: number,
-    hp: number,
-    reductions: DefenceReductions,
-  ): FinishCandidate | null => {
-    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}`;
-    if (!finisherCandidateCache.has(key)) {
-      const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
-      finisherCandidateCache.set(
-        key,
-        buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster, maxHp),
-      );
-    }
-    return finisherCandidateCache.get(key) || null;
-  };
   const getFinishers = (reductions: DefenceReductions): FinishCandidate[] => {
     const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
     return normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
@@ -857,7 +840,6 @@ export const computeSpecWeaponSwaps = (
   ) => {
     const expectedHp = getExpectedHp(states);
     const finishTicks = expectedRemainingTicks(states, getFinisherMemory, true);
-    const maxChartHp = hasDefenceReductionSpec(attacks) ? Math.max(1, Math.ceil(expectedHp)) : maxHp;
     const { best: finisher, bestTicks } = getDisplayFinisher(
       states,
       getSingleFinisherMemory,
@@ -871,26 +853,6 @@ export const computeSpecWeaponSwaps = (
       expectedSeconds: (specTicks + finishTicks) * SECONDS_PER_TICK,
       finisherName: finisher?.name || 'N/A',
       finisherSeconds: bestTicks * SECONDS_PER_TICK,
-      swap: {
-        continuous: getPostSpecSwapMode(
-          states,
-          baseFinishers,
-          getFinisherCandidate,
-          getFinisherMemory,
-          getSingleFinisherMemory,
-          true,
-          maxChartHp,
-        ),
-        discontinuous: getPostSpecSwapMode(
-          states,
-          baseFinishers,
-          getFinisherCandidate,
-          getFinisherMemory,
-          getSingleFinisherMemory,
-          false,
-          maxChartHp,
-        ),
-      },
     });
 
     if (remainingSpecs <= 0 || results.length > MAX_STATE_COUNT) {

@@ -141,10 +141,8 @@ const PostSpecSwapGraph: React.FC<{
   const [overrides, setOverrides] = useState<SpecSwapOutcomeOverride[]>([]);
   const hasOverrides = overrides.length > 0;
   const swap = useMemo(
-    () => (hasOverrides
-      ? computeSpecWeaponSwapGraph(loadouts, monster, result.attacks, overrides)
-      : result.swap),
-    [hasOverrides, loadouts, monster, overrides, result],
+    () => computeSpecWeaponSwapGraph(loadouts, monster, result.attacks, overrides),
+    [loadouts, monster, overrides, result.attacks],
   );
   const activeSwap = mode.value === SwapMode.CONTINUOUS ? swap.continuous : swap.discontinuous;
   const outcomeControls = result.attacks
@@ -357,6 +355,7 @@ const SpecWeaponSwap: React.FC = observer(() => {
   const store = useStore();
   const [startingEnergy, setStartingEnergy] = useState(100);
   const [maxSpecs, setMaxSpecs] = useState(4);
+  const [isOpen, setIsOpen] = useState(false);
   const [expandedResult, setExpandedResult] = useState<string | null>(null);
   const loadouts = toJS(store.loadouts);
   const monster = toJS(store.monster);
@@ -364,12 +363,18 @@ const SpecWeaponSwap: React.FC = observer(() => {
   const specLoadouts = loadouts.filter((loadout) => loadout.specSetup);
   const normalLoadouts = loadouts.filter((loadout) => !loadout.specSetup);
   const results = useMemo(
-    () => computeSpecWeaponSwaps(loadouts, monster, { startingEnergy, maxSpecs }),
-    [loadouts, monster, startingEnergy, maxSpecs],
+    () => (isOpen ? computeSpecWeaponSwaps(loadouts, monster, { startingEnergy, maxSpecs }) : []),
+    [isOpen, loadouts, monster, startingEnergy, maxSpecs],
   );
 
   return (
     <SectionAccordion
+      onIsOpenChanged={(open) => {
+        setIsOpen(open);
+        if (!open) {
+          setExpandedResult(null);
+        }
+      }}
       title={(
         <div className="flex items-center gap-2">
           <IconSwords size={22} />
