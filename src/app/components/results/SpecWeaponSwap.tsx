@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
   CartesianGrid,
@@ -22,8 +22,15 @@ import { toJS } from 'mobx';
 import { useStore } from '@/state';
 import SectionAccordion from '@/app/components/generic/SectionAccordion';
 import NumberInput from '@/app/components/generic/NumberInput';
-import { computeSpecWeaponSwapGraph, computeSpecWeaponSwaps } from '@/lib/SpecWeaponSwap';
+import { computeSpecWeaponSwaps } from '@/lib/SpecWeaponSwap';
+import { useCalc } from '@/worker/CalcWorker';
+import {
+  SpecSwapGraphRequest,
+  SpecSwapGraphResponse,
+  WorkerRequestType,
+} from '@/worker/CalcWorkerTypes';
 import type {
+  SpecSwapModes,
   SpecSwapOutcomeOverride,
   SpecSwapRange,
   SpecSwapResult,
@@ -142,14 +149,19 @@ const PostSpecSwapGraph: React.FC<{
   monster: Monster,
   result: SpecSwapResult,
 }> = ({ loadouts, monster, result }) => {
+  const worker = useCalc();
   const [mode, setMode] = useState(modeOptions[0]);
   const [overrides, setOverrides] = useState<SpecSwapOutcomeOverride[]>([]);
+  const [swap, setSwap] = useState<SpecSwapModes | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const hasOverrides = overrides.length > 0;
-  const swap = useMemo(
-    () => computeSpecWeaponSwapGraph(loadouts, monster, result.attacks, overrides),
-    [loadouts, monster, overrides, result.attacks],
-  );
-  const activeSwap = mode.value === SwapMode.CONTINUOUS ? swap.continuous : swap.discontinuous;
+  const activeSwap = useMemo(() => {
+    if (!swap) {
+      return null;
+    }
+    return mode.value === SwapMode.CONTINUOUS ? swap.continuous : swap.discontinuous;
+  }, [mode.value, swap]);
   const outcomeControls = result.attacks
     .map((attack, attackIndex) => ({ attack, attackIndex }))
     .filter(({ attack }) => (
@@ -162,18 +174,49 @@ const PostSpecSwapGraph: React.FC<{
       : [...prev.filter((o) => o.attackIndex !== override.attackIndex), override]
   ));
 
-  const yDomainMax = useMemo(() => {
-    const high = max(activeSwap.points, (point) => point.expectedSeconds) || 1;
-    return Math.ceil(high);
-  }, [activeSwap.points]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setSwap(null);
 
-  const chartData = useMemo((): SpecSwapChartEntry[] => activeSwap.points.map((point) => {
+    worker.do<SpecSwapGraphRequest, SpecSwapGraphResponse>({
+      type: WorkerRequestType.COMPUTE_SPEC_SWAP_GRAPH,
+      data: {
+        loadouts,
+        monster,
+        attacks: result.attacks,
+        overrides,
+      },
+    }).then((response) => {
+      if (!cancelled) {
+        setSwap(response.payload);
+        setLoading(false);
+      }
+    }).catch((e: Error) => {
+      if (!cancelled) {
+        setError(e.message);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadouts, monster, overrides, result.attacks, worker]);
+
+  const yDomainMax = useMemo(() => {
+    const high = max(activeSwap?.points || [], (point) => point.expectedSeconds) || 1;
+    return Math.ceil(high);
+  }, [activeSwap]);
+
+  const chartData = useMemo((): SpecSwapChartEntry[] => (activeSwap?.points || []).map((point) => {
     const entry: SpecSwapChartEntry = {
       name: point.hitpoints.toString(),
       hitpoints: point.hitpoints,
       weaponOnlySeconds: point.weaponOnlyExpectedSeconds,
     };
-    activeSwap.loadouts.forEach((loadout) => {
+    activeSwap?.loadouts.forEach((loadout) => {
       entry[loadout.loadoutName] = null;
     });
     entry[point.loadoutName] = parseFloat(point.expectedSeconds.toFixed(2));
@@ -181,8 +224,8 @@ const PostSpecSwapGraph: React.FC<{
   }).reverse(), [activeSwap]);
 
   const ranges = useMemo(
-    () => [...activeSwap.ranges].sort((a, b) => b.toHp - a.toHp),
-    [activeSwap.ranges],
+    () => [...(activeSwap?.ranges || [])].sort((a, b) => b.toHp - a.toHp),
+    [activeSwap],
   );
 
   return (
@@ -264,47 +307,60 @@ const PostSpecSwapGraph: React.FC<{
           })}
         </div>
       )}
-      <ResponsiveContainer width="100%" height={250}>
-        <LineChart
-          data={chartData}
-          margin={{
-            top: 40, right: 20, bottom: 10, left: 0,
-          }}
-        >
-          <XAxis
-            allowDecimals={false}
-            dataKey="hitpoints"
-            stroke="#777777"
-            interval="equidistantPreserveStart"
-            label={{ value: hasOverrides ? 'Monster HP after selected specs' : 'Monster HP after expected specs', position: 'insideBottom', offset: -10 }}
-          />
-          <YAxis
-            stroke="#777777"
-            domain={[0, yDomainMax]}
-            tickFormatter={(v: number) => `${parseFloat(v.toFixed(1))}`}
-            label={{
-              value: 'Seconds', position: 'insideLeft', angle: -90, style: { textAnchor: 'middle' },
+      {loading && (
+        <div className="flex h-64 items-center justify-center text-black dark:text-body-200">
+          Loading spec swap graph...
+        </div>
+      )}
+      {error && (
+        <div className={`${warningClassName} mb-4 border`}>
+          <IconAlertTriangle className="text-orange-200" />
+          <div>{error}</div>
+        </div>
+      )}
+      {!loading && !error && activeSwap && (
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart
+            data={chartData}
+            margin={{
+              top: 40, right: 20, bottom: 10, left: 0,
             }}
-          />
-          <CartesianGrid stroke="gray" strokeDasharray="5 5" />
-          <Tooltip
-            filterNull
-            content={(props) => <CustomTooltip {...props} />}
-          />
-          <Legend wrapperStyle={{ fontSize: '.9em', top: 0 }} />
-          {activeSwap.loadouts.map((loadout) => (
-            <Line
-              key={loadout.loadoutIndex}
-              type="monotone"
-              dataKey={loadout.loadoutName}
-              stroke={strokeColours[loadout.loadoutIndex % strokeColours.length]}
-              dot={false}
-              connectNulls={false}
-              isAnimationActive={false}
+          >
+            <XAxis
+              allowDecimals={false}
+              dataKey="hitpoints"
+              stroke="#777777"
+              interval="equidistantPreserveStart"
+              label={{ value: hasOverrides ? 'Monster HP after selected specs' : 'Monster HP after expected specs', position: 'insideBottom', offset: -10 }}
             />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+            <YAxis
+              stroke="#777777"
+              domain={[0, yDomainMax]}
+              tickFormatter={(v: number) => `${parseFloat(v.toFixed(1))}`}
+              label={{
+                value: 'Seconds', position: 'insideLeft', angle: -90, style: { textAnchor: 'middle' },
+              }}
+            />
+            <CartesianGrid stroke="gray" strokeDasharray="5 5" />
+            <Tooltip
+              filterNull
+              content={(props) => <CustomTooltip {...props} />}
+            />
+            <Legend wrapperStyle={{ fontSize: '.9em', top: 0 }} />
+            {activeSwap.loadouts.map((loadout) => (
+              <Line
+                key={loadout.loadoutIndex}
+                type="monotone"
+                dataKey={loadout.loadoutName}
+                stroke={strokeColours[loadout.loadoutIndex % strokeColours.length]}
+                dot={false}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      )}
       <div className="mt-4 flex flex-wrap gap-2 dark:text-white">
         {modeOptions.map((opt) => (
           <button
@@ -322,6 +378,7 @@ const PostSpecSwapGraph: React.FC<{
           </button>
         ))}
       </div>
+      {!loading && !error && activeSwap && (
       <div className="mt-4 overflow-x-auto text-black dark:text-body-200">
         <table className="w-full">
           <thead>
@@ -352,6 +409,7 @@ const PostSpecSwapGraph: React.FC<{
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 };
