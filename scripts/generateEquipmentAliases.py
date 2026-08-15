@@ -46,7 +46,7 @@ def getEquipmentData():
             )
         }
         r = requests.get(API_BASE + '?' + urllib.parse.urlencode(query), headers={
-            'User-Agent': 'osrs-dps-calc (https://github.com/weirdgloop/osrs-dps-calc)'
+            'User-Agent': 'bopsec-osrs-dps-calc (https://dps.bopsec.com; https://github.com/bopsec/osrs-dps-calc)'
         })
         data = r.json()
 

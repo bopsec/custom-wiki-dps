@@ -5,6 +5,7 @@ import LazyImage from '@/app/components/generic/LazyImage';
 import power from '@/public/img/misc/power.webp';
 import { observer } from 'mobx-react-lite';
 import { useStore } from '@/state';
+import { FORK_SOURCE_URL, UPSTREAM_SOURCE_URL } from '@/app/forkMetadata';
 
 const Footer: React.FC = observer(() => {
   const store = useStore();
@@ -25,17 +26,25 @@ const Footer: React.FC = observer(() => {
           </div>
           <a
             className="flex border rounded-full p-0.5 border-gray-400"
-            href="https://github.com/weirdgloop/osrs-dps-calc"
+            href={FORK_SOURCE_URL}
             target="_blank"
             aria-label="Visit the GitHub repo"
           >
             <IconBrandGithub size={15} />
           </a>
           {process.env.GIT_SHA && (
-            <a href={`https://github.com/weirdgloop/osrs-dps-calc/tree/${process.env.GIT_SHA}`} target="_blank">
+            <a href={`${FORK_SOURCE_URL}/tree/${process.env.GIT_SHA}`} target="_blank">
               {`${process.env.GIT_SHA_SHORT}${process.env.GIT_DIRTY === 'true' ? '*' : ''}`}
             </a>
           )}
+        </div>
+        <div className="basis-full text-gray-100 dark:text-gray-300 sm:basis-auto">
+          Unofficial fork of the
+          {' '}
+          <a href={UPSTREAM_SOURCE_URL} target="_blank">OSRS Wiki DPS Calculator</a>
+          .
+          {' '}
+          Not affiliated with or endorsed by Jagex, Weird Gloop, or the OSRS Wiki.
         </div>
         <div>
           <button
@@ -56,11 +65,7 @@ const Footer: React.FC = observer(() => {
           {' '}
           &#183;
           {' '}
-          <a href="https://weirdgloop.org/privacy" target="_blank">Privacy</a>
-          {' '}
-          &#183;
-          {' '}
-          <a href="https://weirdgloop.org/terms" target="_blank">Terms</a>
+          <a href="/legal">Legal</a>
           {' '}
           &#183;
           {' '}

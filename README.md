@@ -1,3 +1,21 @@
+# Bopsec OSRS DPS Calculator
+
+This branch is an unofficial modified fork intended for hosting at
+[dps.bopsec.com](https://dps.bopsec.com).
+
+The upstream project is the [OSRS Wiki DPS Calculator](https://github.com/weirdgloop/osrs-dps-calc),
+created for the [OSRS Wiki](https://oldschool.runescape.wiki). This fork preserves upstream
+license and attribution notices and publishes modified source under GPLv3.
+
+This site is not affiliated with, sponsored by, or endorsed by Jagex, Weird Gloop, or the OSRS Wiki.
+RuneScape and Old School RuneScape are trademarks of Jagex Limited.
+
+When hosting this fork, set `NEXT_PUBLIC_BASE_URL=https://dps.bopsec.com`. If you publish the
+generated CDN assets yourself, set `NEXT_PUBLIC_CDN_BASE` to that hosted `/cdn` path; otherwise the
+app uses the upstream OSRS Wiki DPS calculator CDN.
+
+## Upstream README
+
 # osrs-dps-calc
 [![](https://img.shields.io/badge/view%20online-red)](https://tools.runescape.wiki/osrs-dps) ![GitHub contributors](https://img.shields.io/github/contributors/weirdgloop/osrs-dps-calc)
 

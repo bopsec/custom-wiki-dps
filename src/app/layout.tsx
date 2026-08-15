@@ -5,14 +5,23 @@ import '../globals.css';
 import { Metadata } from 'next';
 import { ibm, pts } from '@/fonts';
 import ClientProviders from '@/app/components/ClientProviders';
+import {
+  FORK_HOST,
+  FORK_NAME,
+  FORK_URL,
+  UPSTREAM_SOURCE_URL,
+} from '@/app/forkMetadata';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || ''),
-  title: 'DPS Calculator - OSRS Wiki',
-  description: "See how your gear stacks up against Old School RuneScape's monsters using the OSRS Wiki's damage-per-second calculator.",
-  authors: [{ name: 'OSRS Wiki', url: 'https://oldschool.runescape.wiki' }],
-  keywords: ['osrs', 'old school runescape', 'runescape', 'dps calculator', 'osrs dps', 'osrs wiki', 'osrs wiki dps'],
-  alternates: { canonical: `${process.env.NEXT_PUBLIC_BASE_URL}${process.env.NEXT_PUBLIC_BASE_PATH}` },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || FORK_URL),
+  title: `${FORK_NAME} - OSRS`,
+  description: 'Advanced fork of the OSRS Wiki damage-per-second calculator for Old School RuneScape.',
+  authors: [
+    { name: 'Bopsec', url: FORK_URL },
+    { name: 'OSRS Wiki contributors', url: UPSTREAM_SOURCE_URL },
+  ],
+  keywords: ['osrs', 'old school runescape', 'runescape', 'dps calculator', 'osrs dps', FORK_HOST],
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_BASE_URL || FORK_URL}${process.env.NEXT_PUBLIC_BASE_PATH || ''}` },
   twitter: {
     card: 'summary',
   },

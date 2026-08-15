@@ -1,0 +1,20 @@
+Bopsec OSRS DPS Calculator
+
+This project is an unofficial modified fork of the OSRS Wiki DPS Calculator:
+https://github.com/weirdgloop/osrs-dps-calc
+
+The upstream calculator was created for the Old School RuneScape Wiki by Weird
+Gloop and community contributors:
+https://oldschool.runescape.wiki
+
+Source code is licensed under the GNU General Public License version 3. See
+LICENSE for the full license text.
+
+This calculator uses material and game data derived from the OSRS Wiki. OSRS
+Wiki content is licensed under the Creative Commons Attribution-NonCommercial-
+ShareAlike 3.0 Unported License, except where otherwise noted:
+https://creativecommons.org/licenses/by-nc-sa/3.0/
+
+This project is unofficial and is not affiliated with, sponsored by, or endorsed
+by Jagex, Weird Gloop, or the OSRS Wiki. RuneScape and Old School RuneScape are
+trademarks of Jagex Limited.
