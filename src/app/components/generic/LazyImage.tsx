@@ -6,11 +6,15 @@ interface ILazyImageProps extends React.HTMLProps<HTMLImageElement> {
   responsive?: boolean;
   // Whether to show a loading spinner while the image is loading
   showSpinner?: boolean;
+  fallbackSrc?: string;
 }
 
 const LazyImage: React.FC<ILazyImageProps> = (props) => {
-  const { responsive, showSpinner, ...imgProps } = props;
+  const {
+    responsive, showSpinner, fallbackSrc, ...imgProps
+  } = props;
   const [loading, setLoading] = useState(true);
+  const [src, setSrc] = useState(imgProps.src);
 
   return (
     <>
@@ -23,8 +27,14 @@ const LazyImage: React.FC<ILazyImageProps> = (props) => {
         alt=""
         // eslint-disable-next-line react/jsx-props-no-spreading
         {...imgProps}
+        src={src}
         className={`${responsive ? 'max-h-full max-w-full object-contain' : ''} ${(showSpinner && loading) ? 'hidden' : 'visible'}`}
         onLoad={() => setLoading(false)}
+        onError={() => {
+          if (fallbackSrc && src !== fallbackSrc) {
+            setSrc(fallbackSrc);
+          }
+        }}
       />
     </>
   );

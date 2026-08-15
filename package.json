@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build-pages": "next build && node scripts/copyCdnForPages.mjs",
     "build-staging": "env-cmd -f .env.staging next build",
     "build-docker": "docker build -t weirdgloop/osrs-dps-calc .",
     "build-docker-scraper": "docker build -t weirdgloop/osrs-dps-calc:scraper --target=scraper-dev .",

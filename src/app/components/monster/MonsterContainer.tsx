@@ -22,7 +22,7 @@ import coxCmIcon from '@/public/img/cox_challenge_mode.png';
 import { useStore } from '@/state';
 import { observer } from 'mobx-react-lite';
 import { MonsterAttribute } from '@/enums/MonsterAttribute';
-import { getCdnImage } from '@/utils';
+import { getCdnImage, getUpstreamCdnImage } from '@/utils';
 import PresetAttributeButton from '@/app/components/monster/PresetAttributeButton';
 import NumberInput from '@/app/components/generic/NumberInput';
 import {
@@ -399,6 +399,9 @@ const MonsterContainer: React.FC = observer(() => {
                     responsive
                     src={
                       store.monster.image ? getCdnImage(`monsters/${store.monster.image}`) : undefined
+                    }
+                    fallbackSrc={
+                      store.monster.image ? getUpstreamCdnImage(`monsters/${store.monster.image}`) : undefined
                     }
                     alt={store.monster.name || 'Unknown'}
                   />

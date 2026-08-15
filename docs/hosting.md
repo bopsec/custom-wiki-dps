@@ -8,7 +8,7 @@ This fork is a static Next.js export. The build output is the `out` directory, s
 2. In Cloudflare, create a Pages project from the GitHub repository.
 3. Set the production branch to `local-dps-calc`.
 4. Use the `Next.js (Static HTML Export)` preset:
-   - Build command: `yarn build`
+   - Build command: `corepack enable && yarn build-pages`
    - Build output directory: `out`
 5. Add environment variables:
    - `NEXT_PUBLIC_BASE_URL=https://dps.bopsec.com`
@@ -17,6 +17,8 @@ This fork is a static Next.js export. The build output is the `out` directory, s
 6. Add the custom domain `dps.bopsec.com` in the Cloudflare Pages project.
 
 Cloudflare Pages will rebuild and redeploy whenever `local-dps-calc` is pushed.
+
+`yarn build-pages` copies the tracked `cdn/` directory into `out/cdn`, so normal equipment and monster images are served from `dps.bopsec.com`. If a local image is missing, the browser falls back to the upstream OSRS Wiki DPS CDN for that image.
 
 ## Updating From Weird Gloop
 

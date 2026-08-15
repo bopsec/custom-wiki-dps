@@ -2,7 +2,7 @@ import { PlayerEquipment } from '@/types/Player';
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStore } from '@/state';
-import { getCdnImage } from '@/utils';
+import { getCdnImage, getUpstreamCdnImage } from '@/utils';
 import UserIssueWarning from '@/app/components/generic/UserIssueWarning';
 import { BLOWPIPE_IDS } from '@/lib/constants';
 
@@ -49,7 +49,16 @@ const EquipmentGridSlot: React.FC<EquipmentGridSlotProps> = observer((props) => 
         }}
       >
         {currentSlot?.image ? (
-          <img src={getCdnImage(`equipment/${currentSlot.image}`)} alt={currentSlot.name} />
+          <img
+            src={getCdnImage(`equipment/${currentSlot.image}`)}
+            alt={currentSlot.name}
+            onError={(event) => {
+              const fallback = getUpstreamCdnImage(`equipment/${currentSlot.image}`);
+              if (event.currentTarget.src !== fallback) {
+                event.currentTarget.src = fallback;
+              }
+            }}
+          />
         ) : (
           placeholder && (
             <img className="opacity-30 dark:filter dark:invert" src={placeholder} alt={slot} draggable={false} />

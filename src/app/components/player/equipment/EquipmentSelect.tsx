@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useStore } from '@/state';
 import { observer } from 'mobx-react-lite';
-import { getCdnImage, isDefined } from '@/utils';
+import { getCdnImage, getUpstreamCdnImage, isDefined } from '@/utils';
 import { EquipmentPiece } from '@/types/Player';
 import LazyImage from '@/app/components/generic/LazyImage';
 import { cross } from 'd3-array';
@@ -198,7 +198,14 @@ const EquipmentSelect: React.FC<IEquipmentSelectProps> = observer((props) => {
       CustomItemComponent={({ item, itemString }) => (
         <div className="flex items-center gap-2">
           <div className="basis-4 flex justify-center h-[20px] w-auto">
-            {item.equipment.image && (<LazyImage responsive src={item.equipment.image ? getCdnImage(`equipment/${item.equipment.image}`) : undefined} alt="" />)}
+            {item.equipment.image && (
+              <LazyImage
+                responsive
+                src={getCdnImage(`equipment/${item.equipment.image}`)}
+                fallbackSrc={getUpstreamCdnImage(`equipment/${item.equipment.image}`)}
+                alt=""
+              />
+            )}
           </div>
           <div>
             {itemString}
