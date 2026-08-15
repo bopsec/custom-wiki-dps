@@ -179,7 +179,7 @@ const WeaponSwap: React.FC = observer(() => {
           className={`${warningClassName} border-b`}
         >
           <IconAlertTriangle className="text-orange-200" />
-          <div>Add at least two damaging loadouts to compute swap breakpoints.</div>
+          <div>Add at least two damaging non-spec loadouts to compute swap breakpoints.</div>
         </div>
       )}
       {result && activeResult && (

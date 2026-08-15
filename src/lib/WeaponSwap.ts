@@ -174,6 +174,11 @@ const optimize = (
       }
     }
 
+    if (bestTicks === Infinity) {
+      memory[hp] = bestTicks;
+      continue;
+    }
+
     memory[hp] = bestTicks;
     const point: WeaponSwapPoint = {
       hitpoints: hp,
@@ -229,7 +234,9 @@ export const computeWeaponSwap = (
     };
   });
 
-  if (!swapLoadouts.some((loadout) => max(loadout.baseHistogram.keys()) || 0)) {
+  const damagingLoadouts = swapLoadouts.filter((loadout) => (max(loadout.baseHistogram.keys()) || 0) > 0);
+
+  if (damagingLoadouts.length < 2) {
     return undefined;
   }
 
@@ -240,7 +247,7 @@ export const computeWeaponSwap = (
     currentHp,
     cappedHp,
     truncated: currentHp > cappedHp,
-    continuous: optimize(scaledMonster, swapLoadouts, cappedHp, true),
-    discontinuous: optimize(scaledMonster, swapLoadouts, cappedHp, false),
+    continuous: optimize(scaledMonster, damagingLoadouts, cappedHp, true),
+    discontinuous: optimize(scaledMonster, damagingLoadouts, cappedHp, false),
   };
 };
