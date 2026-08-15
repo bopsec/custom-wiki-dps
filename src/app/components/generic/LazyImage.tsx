@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IconRotate2 } from '@tabler/icons-react';
 
 interface ILazyImageProps extends React.HTMLProps<HTMLImageElement> {
@@ -15,6 +15,11 @@ const LazyImage: React.FC<ILazyImageProps> = (props) => {
   } = props;
   const [loading, setLoading] = useState(true);
   const [src, setSrc] = useState(imgProps.src);
+
+  useEffect(() => {
+    setSrc(imgProps.src);
+    setLoading(true);
+  }, [imgProps.src]);
 
   return (
     <>
