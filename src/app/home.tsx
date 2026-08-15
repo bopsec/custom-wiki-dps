@@ -14,6 +14,7 @@ import InitialLoad from '@/app/components/InitialLoad';
 import LoadoutComparison from '@/app/components/results/LoadoutComparison';
 import TtkComparison from '@/app/components/results/TtkComparison';
 import WeaponSwap from '@/app/components/results/WeaponSwap';
+import SpecWeaponSwap from '@/app/components/results/SpecWeaponSwap';
 import ShareModal from '@/app/components/ShareModal';
 import DebugPanels from '@/app/components/results/DebugPanels';
 import { IconAlertTriangle } from '@tabler/icons-react';
@@ -127,6 +128,7 @@ const Home: NextPage = observer(() => {
           <LoadoutComparison />
         </CalcProvider>
         <WeaponSwap />
+        <SpecWeaponSwap />
         <TtkComparison />
         <NPCVersusPlayerResultsContainer />
         <DebugPanels />
