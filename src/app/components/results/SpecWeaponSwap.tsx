@@ -150,7 +150,7 @@ const PostSpecSwapGraph: React.FC<{ swap: SpecSwapModes }> = ({ swap }) => {
             dataKey="hitpoints"
             stroke="#777777"
             interval="equidistantPreserveStart"
-            label={{ value: 'Monster HP after specs', position: 'insideBottom', offset: -10 }}
+            label={{ value: 'Monster HP after expected specs', position: 'insideBottom', offset: -10 }}
           />
           <YAxis
             stroke="#777777"

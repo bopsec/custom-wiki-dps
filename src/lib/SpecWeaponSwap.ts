@@ -319,14 +319,41 @@ const getDisplayFinisher = (
   return { best, bestTicks };
 };
 
+const getDisplayFinisherAtHp = (
+  hp: number,
+  states: SpecState[],
+  getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, continuous: boolean) => Float64Array,
+  baseFinishers: FinishCandidate[],
+  continuous: boolean,
+) => {
+  let best = baseFinishers[0];
+  let bestTicks = Infinity;
+
+  for (const finisher of baseFinishers) {
+    let expectedTicks = 0;
+    for (const state of states) {
+      expectedTicks += (
+        state.probability * getSingleFinisherMemory(finisher.loadoutIndex, state.reductions, continuous)[hp]
+      );
+    }
+    if (expectedTicks < bestTicks) {
+      best = finisher;
+      bestTicks = expectedTicks;
+    }
+  }
+
+  return { best, bestTicks };
+};
+
 const getPostSpecSwapMode = (
   states: SpecState[],
   baseFinishers: FinishCandidate[],
   getFinisherMemory: (reductions: DefenceReductions, continuous: boolean) => Float64Array,
   getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, continuous: boolean) => Float64Array,
   continuous: boolean,
+  maxChartHp: number,
 ): SpecSwapMode => {
-  const highestAliveHp = Math.max(...states.map((state) => state.hp));
+  const highestAliveHp = Math.min(maxChartHp, Math.max(...states.map((state) => state.hp)));
   const points: SpecSwapPoint[] = [];
 
   for (let hp = 1; hp <= highestAliveHp; hp++) {
@@ -346,7 +373,8 @@ const getPostSpecSwapMode = (
       expectedTicks += state.probability * getFinisherMemory(state.reductions, continuous)[hp];
     }
 
-    const { best, bestTicks } = getDisplayFinisher(
+    const { best, bestTicks } = getDisplayFinisherAtHp(
+      hp,
       weightedStates,
       getSingleFinisherMemory,
       baseFinishers,
@@ -541,8 +569,9 @@ export const computeSpecWeaponSwaps = (
     attacks: SpecSwapAttack[],
     specTicks: number,
   ) => {
-    const finishTicks = expectedRemainingTicks(states, getFinisherMemory, true);
     const expectedHp = getExpectedHp(states);
+    const finishTicks = expectedRemainingTicks(states, getFinisherMemory, true);
+    const maxChartHp = Math.max(1, Math.ceil(expectedHp));
     const { best: finisher, bestTicks } = getDisplayFinisher(
       states,
       getSingleFinisherMemory,
@@ -557,8 +586,22 @@ export const computeSpecWeaponSwaps = (
       finisherName: finisher?.name || 'N/A',
       finisherSeconds: bestTicks * SECONDS_PER_TICK,
       swap: {
-        continuous: getPostSpecSwapMode(states, baseFinishers, getFinisherMemory, getSingleFinisherMemory, true),
-        discontinuous: getPostSpecSwapMode(states, baseFinishers, getFinisherMemory, getSingleFinisherMemory, false),
+        continuous: getPostSpecSwapMode(
+          states,
+          baseFinishers,
+          getFinisherMemory,
+          getSingleFinisherMemory,
+          true,
+          maxChartHp,
+        ),
+        discontinuous: getPostSpecSwapMode(
+          states,
+          baseFinishers,
+          getFinisherMemory,
+          getSingleFinisherMemory,
+          false,
+          maxChartHp,
+        ),
       },
     });
 
