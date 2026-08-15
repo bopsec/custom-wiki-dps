@@ -16,7 +16,19 @@ interface IResultRowProps {
   title?: string;
 }
 
-const calcKeyToString = (value: number, calcKey: keyof PlayerVsNPCCalculatedLoadout): string | React.ReactNode => {
+const specSetupMetricMap: Partial<Record<keyof PlayerVsNPCCalculatedLoadout, keyof PlayerVsNPCCalculatedLoadout>> = {
+  maxHit: 'specMaxHit',
+  expectedHit: 'specExpected',
+  dps: 'specMomentDps',
+  accuracy: 'specAccuracy',
+};
+
+const getDisplayCalcKey = (
+  calcKey: keyof PlayerVsNPCCalculatedLoadout,
+  isSpecSetup: boolean,
+) => (isSpecSetup ? specSetupMetricMap[calcKey] || calcKey : calcKey);
+
+const calcKeyToString = (value: number | undefined, calcKey: keyof PlayerVsNPCCalculatedLoadout): string | React.ReactNode => {
   if (value === undefined || value === null) {
     return (<p className="text-sm">---</p>);
   }
@@ -68,13 +80,25 @@ const ResultRow: React.FC<PropsWithChildren<IResultRowProps>> = observer((props)
   } = props;
   const { calc, userIssues } = store;
   const loadouts = toJS(calc.loadouts);
+  const playerLoadouts = toJS(store.loadouts);
 
   const cells = useMemo(() => {
     const aggregator = ['ttk', 'npcDefRoll'].includes(calcKey) ? min : max;
-    const bestValue = aggregator(Object.values(loadouts).filter((l) => (calcKey === 'ttk' ? l[calcKey] !== 0 : true)), (l) => l[calcKey] as number);
+    const resolvedValues = Object.values(loadouts).map((l, i) => {
+      const isSpecSetup = playerLoadouts[i]?.specSetup || false;
+      const displayCalcKey = getDisplayCalcKey(calcKey, isSpecSetup);
+      return {
+        displayCalcKey,
+        isSpecSetup,
+        value: displayCalcKey === 'ttk' && isSpecSetup ? undefined : l[displayCalcKey] as number | undefined,
+      };
+    });
+    const bestValue = aggregator(resolvedValues.filter(({ value }) => (calcKey === 'ttk' ? value !== 0 : true)), ({ value }) => value as number);
 
-    return Object.values(loadouts).map((l, i) => {
-      const value = l[calcKey] as number;
+    return Object.values(loadouts).map((_, i) => {
+      const {
+        displayCalcKey, isSpecSetup, value,
+      } = resolvedValues[i];
       if (hasResults && calcKey.startsWith('spec') && (value === undefined || value === null)) {
         // results are in, but the weapon has no implemented special attack
         // we colspan on the first entry (specAccuracy) if extended, and just return nothing for the rest
@@ -90,11 +114,14 @@ const ResultRow: React.FC<PropsWithChildren<IResultRowProps>> = observer((props)
       return (
         // eslint-disable-next-line react/no-array-index-key
         <th className={`text-center w-28 border-r ${((Object.values(loadouts).length > 1) && bestValue === value) ? 'dark:text-green-200 text-green-800' : 'dark:text-body-200 text-black'}`} key={i}>
-          {hasResults ? calcKeyToString(value, calcKey) : (<Spinner className="w-3" />)}
+          {hasResults ? calcKeyToString(value, displayCalcKey) : (<Spinner className="w-3" />)}
+          {isSpecSetup && !calcKey.startsWith('spec') && displayCalcKey !== calcKey && (
+            <div className="text-[10px] leading-3 text-orange-200">spec</div>
+          )}
         </th>
       );
     });
-  }, [loadouts, calcKey, collapseSpecs, hasResults, userIssues]);
+  }, [loadouts, playerLoadouts, calcKey, collapseSpecs, hasResults, userIssues]);
 
   return (
     <tr>
@@ -117,7 +144,7 @@ const PlayerVsNPCResultsTable: React.FC = observer(() => {
       <thead>
         <tr>
           <th aria-label="blank" className="bg-btns-400 border-r dark:bg-dark-500 select-none" />
-          {store.loadouts.map(({ name }, i) => (
+          {store.loadouts.map(({ name, specSetup }, i) => (
             <th
               role="button"
               tabIndex={0}
@@ -127,6 +154,11 @@ const PlayerVsNPCResultsTable: React.FC = observer(() => {
               onClick={() => store.setSelectedLoadout(i)}
             >
               {name}
+              {specSetup && (
+                <div className="mt-0.5 text-[10px] font-sans font-normal uppercase tracking-wide text-orange-100">
+                  Spec setup
+                </div>
+              )}
             </th>
           ))}
         </tr>

@@ -40,20 +40,33 @@ export interface WeaponSwapResult {
 
 interface SwapLoadout {
   name: string;
-  calc: PlayerVsNPCCalc;
+  calc: PlayerVsNPCCalc | null;
   speed: number;
   baseHistogram: Map<number, number>;
 }
 
 const MAX_OPTIMIZED_HP = 400;
 
-const histogramFromCalc = (calc: PlayerVsNPCCalc): Map<number, number> => {
+const histogramFromCalc = (calc: PlayerVsNPCCalc | null): Map<number, number> => {
   const histogram = new Map<number, number>();
+  if (!calc) {
+    histogram.set(0, 1);
+    return histogram;
+  }
   calc.getDistribution().singleHitsplat.hits.forEach((hit) => {
     const damage = hit.getSum();
     histogram.set(damage, (histogram.get(damage) || 0) + hit.probability);
   });
   return histogram;
+};
+
+const getSwapCalc = (loadout: Player, monster: Monster): PlayerVsNPCCalc | null => {
+  const calc = new PlayerVsNPCCalc(loadout, monster, {
+    detailedOutput: false,
+    disableMonsterScaling: true,
+  });
+
+  return loadout.specSetup ? calc.getSpecCalc() : calc;
 };
 
 const getHistogramAtHp = (
@@ -68,10 +81,7 @@ const getHistogramAtHp = (
       monsterCurrentHp: hp,
     },
   });
-  const calc = new PlayerVsNPCCalc(loadout, calcMonster, {
-    detailedOutput: false,
-    disableMonsterScaling: true,
-  });
+  const calc = getSwapCalc(loadout, calcMonster);
   return histogramFromCalc(calc);
 };
 
@@ -126,7 +136,7 @@ const optimize = (
     let bestIx = 0;
 
     for (const [ix, swapLoadout] of swapLoadouts.entries()) {
-      const hist = swapLoadout.calc.distIsCurrentHpDependent(loadouts[ix], monster)
+      const hist = swapLoadout.calc?.distIsCurrentHpDependent(loadouts[ix], monster)
         ? getHistogramAtHp(loadouts[ix], monster, hp)
         : swapLoadout.baseHistogram;
       const missChance = hist.get(0) || 0;
@@ -204,16 +214,12 @@ export const computeWeaponSwap = (
     : scaleMonster(JSON.parse(JSON.stringify(monster)) as Monster);
 
   const swapLoadouts = loadouts.map((loadout, i): SwapLoadout => {
-    const calc = new PlayerVsNPCCalc(loadout, scaledMonster, {
-      loadoutName: (i + 1).toString(),
-      detailedOutput: false,
-      disableMonsterScaling: true,
-    });
+    const calc = getSwapCalc(loadout, scaledMonster);
 
     return {
       name: loadout.name || `Loadout ${i + 1}`,
       calc,
-      speed: calc.getExpectedAttackSpeed(),
+      speed: calc?.getExpectedAttackSpeed() || 0,
       baseHistogram: histogramFromCalc(calc),
     };
   });

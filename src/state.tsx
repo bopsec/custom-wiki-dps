@@ -77,6 +77,7 @@ const generateInitialEquipment = () => {
 
 export const generateEmptyPlayer = (name?: string): Player => ({
   name: name ?? 'Loadout 1',
+  specSetup: false,
   style: getCombatStylesForCategory(EquipmentCategory.NONE)[0],
   skills: {
     atk: 99,

@@ -1,0 +1,45 @@
+name: Sync upstream into local DPS calc
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream-local-dps-calc
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout local branch
+        uses: actions/checkout@v4
+        with:
+          ref: local-dps-calc
+          fetch-depth: 0
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/weirdgloop/osrs-dps-calc.git
+          git fetch upstream main
+
+      - name: Merge upstream if needed
+        run: |
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "local-dps-calc already contains upstream/main."
+            exit 0
+          fi
+
+          git merge --no-edit upstream/main
+
+      - name: Push local branch
+        run: git push origin HEAD:local-dps-calc

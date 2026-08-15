@@ -14,6 +14,8 @@ When hosting this fork, set `NEXT_PUBLIC_BASE_URL=https://dps.bopsec.com`. If yo
 generated CDN assets yourself, set `NEXT_PUBLIC_CDN_BASE` to that hosted `/cdn` path; otherwise the
 app uses the upstream OSRS Wiki DPS calculator CDN.
 
+See [docs/hosting.md](docs/hosting.md) for the Cloudflare Pages setup and the upstream sync workflow.
+
 ## Upstream README
 
 # osrs-dps-calc

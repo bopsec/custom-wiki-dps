@@ -219,19 +219,23 @@ export default class Comparator {
     });
 
     const forwardCalc = (loadout: Player) => new PlayerVsNPCCalc(loadout, x.monster, this.commonOpts);
+    const forwardOrSpecCalc = (loadout: Player) => {
+      const calc = forwardCalc(loadout);
+      return loadout.specSetup ? calc.getSpecCalc() : calc;
+    };
     const reverseCalc = (loadout: Player) => new NPCVsPlayerCalc(loadout, x.monster, this.commonOpts);
 
     switch (this.yAxis) {
       case CompareYAxis.PLAYER_DPS:
-        apply((l) => forwardCalc(l).getDps().toFixed(DPS_PRECISION));
+        apply((l) => forwardOrSpecCalc(l)?.getDps().toFixed(DPS_PRECISION));
         break;
 
       case CompareYAxis.PLAYER_EXPECTED_HIT:
-        apply((l) => forwardCalc(l).getDistribution().getExpectedDamage().toFixed(DPS_PRECISION));
+        apply((l) => forwardOrSpecCalc(l)?.getDistribution().getExpectedDamage().toFixed(DPS_PRECISION));
         break;
 
       case CompareYAxis.PLAYER_TTK:
-        apply((l) => forwardCalc(l).getTtk()?.toFixed(DPS_PRECISION));
+        apply((l) => (l.specSetup ? undefined : forwardCalc(l).getTtk()?.toFixed(DPS_PRECISION)));
         break;
 
       case CompareYAxis.MONSTER_DPS:
@@ -243,7 +247,7 @@ export default class Comparator {
         break;
 
       case CompareYAxis.PLAYER_MAX_HIT:
-        apply((l) => forwardCalc(l).getMax().toString());
+        apply((l) => forwardOrSpecCalc(l)?.getMax().toString());
         break;
 
       default:

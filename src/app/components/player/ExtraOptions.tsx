@@ -19,6 +19,23 @@ const ExtraOptions: React.FC = observer(() => {
     <div className="px-6 my-4">
       <div className="mt-2 mb-4">
         <Toggle
+          checked={player.specSetup}
+          setChecked={(c) => store.updatePlayer({ specSetup: c })}
+          label={(
+            <>
+              Spec setup
+              {' '}
+              <span
+                className="align-super underline decoration-dotted cursor-help text-xs text-gray-300"
+                data-tooltip-id="tooltip"
+                data-tooltip-content="Treat this loadout as special-attack-only in the main result table."
+              >
+                ?
+              </span>
+            </>
+          )}
+        />
+        <Toggle
           checked={player.buffs.onSlayerTask}
           setChecked={(c) => store.updatePlayer({ buffs: { onSlayerTask: c } })}
           label={(
