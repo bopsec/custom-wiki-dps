@@ -12,7 +12,12 @@ import {
   YAxis,
 } from 'recharts';
 import { max } from 'd3-array';
-import { IconAlertTriangle, IconChartLine, IconSwords } from '@tabler/icons-react';
+import {
+  IconAlertTriangle,
+  IconChartLine,
+  IconInfoCircle,
+  IconSwords,
+} from '@tabler/icons-react';
 import { toJS } from 'mobx';
 import { useStore } from '@/state';
 import SectionAccordion from '@/app/components/generic/SectionAccordion';
@@ -391,6 +396,20 @@ const SpecWeaponSwap: React.FC = observer(() => {
         </div>
       )}
       <div className="px-6 py-4 text-sm dark:text-white">
+        {specLoadouts.length === 0 && (
+          <div className="mb-4 border border-body-300 dark:border-dark-200 bg-body-100 dark:bg-dark-500 px-4 py-3 text-black dark:text-body-200">
+            <div className="mb-2 flex items-center gap-2 font-bold dark:text-white">
+              <IconInfoCircle size={18} />
+              <span>Spec setup guide</span>
+            </div>
+            <ol className="list-decimal pl-5 leading-6">
+              <li>Create or duplicate a loadout for the spec weapon.</li>
+              <li>Equip the spec weapon and any gear used only for that special attack.</li>
+              <li>Open that loadout&apos;s extra options and enable Spec setup.</li>
+              <li>Keep your normal DPS loadouts unchecked so they are used after the specs.</li>
+            </ol>
+          </div>
+        )}
         <div className="mb-4 flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <span>Starting spec energy</span>
