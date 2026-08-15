@@ -21,6 +21,32 @@ export interface SpecSwapAttack {
   accuracy: number;
 }
 
+export interface SpecSwapPoint {
+  hitpoints: number;
+  loadoutIndex: number;
+  loadoutName: string;
+  expectedTicks: number;
+  expectedSeconds: number;
+  weaponOnlyExpectedTicks: number;
+  weaponOnlyExpectedSeconds: number;
+}
+
+export interface SpecSwapRange {
+  fromHp: number;
+  toHp: number;
+  loadoutIndex: number;
+  loadoutName: string;
+}
+
+export interface SpecSwapMode {
+  points: SpecSwapPoint[];
+  ranges: SpecSwapRange[];
+  loadouts: {
+    loadoutIndex: number;
+    loadoutName: string;
+  }[];
+}
+
 export interface SpecSwapResult {
   attacks: SpecSwapAttack[];
   remainingEnergy: number;
@@ -28,6 +54,7 @@ export interface SpecSwapResult {
   expectedSeconds: number;
   finisherName: string;
   finisherSeconds: number;
+  swap: SpecSwapMode;
 }
 
 interface AttackCandidate extends SpecSwapAttack {
@@ -179,6 +206,24 @@ const buildFinisherMemory = (finishers: FinishCandidate[], maxHp: number): Float
   return memory;
 };
 
+const buildRanges = (points: SpecSwapPoint[]): SpecSwapRange[] => {
+  const ranges: SpecSwapRange[] = [];
+  for (const point of points) {
+    const prev = ranges[ranges.length - 1];
+    if (prev && prev.loadoutIndex === point.loadoutIndex && prev.toHp + 1 === point.hitpoints) {
+      prev.toHp = point.hitpoints;
+    } else {
+      ranges.push({
+        fromHp: point.hitpoints,
+        toHp: point.hitpoints,
+        loadoutIndex: point.loadoutIndex,
+        loadoutName: point.loadoutName,
+      });
+    }
+  }
+  return ranges;
+};
+
 const applyAttack = (
   states: SpecState[],
   attack: SpecSwapAttack,
@@ -244,6 +289,57 @@ const getDisplayFinisher = (
   }
 
   return { best, bestTicks };
+};
+
+const getPostSpecSwapMode = (
+  states: SpecState[],
+  baseFinishers: FinishCandidate[],
+  getFinisherMemory: (reductions: DefenceReductions) => Float64Array,
+  getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions) => Float64Array,
+): SpecSwapMode => {
+  const statesByHp = new Map<number, SpecState[]>();
+  for (const state of states) {
+    if (state.hp <= 0) {
+      continue;
+    }
+    statesByHp.set(state.hp, [...(statesByHp.get(state.hp) || []), state]);
+  }
+
+  const points = [...statesByHp.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([hp, hpStates]): SpecSwapPoint => {
+      const hpProbability = hpStates.reduce((sum, state) => sum + state.probability, 0);
+      const weightedStates = hpStates.map((state) => ({
+        ...state,
+        probability: state.probability / hpProbability,
+      }));
+
+      let expectedTicks = 0;
+      for (const state of weightedStates) {
+        expectedTicks += state.probability * getFinisherMemory(state.reductions)[hp];
+      }
+
+      const { best, bestTicks } = getDisplayFinisher(weightedStates, getSingleFinisherMemory, baseFinishers);
+
+      return {
+        hitpoints: hp,
+        loadoutIndex: best.loadoutIndex,
+        loadoutName: best.name,
+        expectedTicks,
+        expectedSeconds: expectedTicks * SECONDS_PER_TICK,
+        weaponOnlyExpectedTicks: bestTicks,
+        weaponOnlyExpectedSeconds: bestTicks * SECONDS_PER_TICK,
+      };
+    });
+
+  return {
+    points,
+    ranges: buildRanges(points),
+    loadouts: baseFinishers.map((finisher) => ({
+      loadoutIndex: finisher.loadoutIndex,
+      loadoutName: finisher.name,
+    })),
+  };
 };
 
 const trimStates = (states: SpecState[]): SpecState[] => {
@@ -422,6 +518,7 @@ export const computeSpecWeaponSwaps = (
       expectedSeconds: (specTicks + finishTicks) * SECONDS_PER_TICK,
       finisherName: finisher?.name || 'N/A',
       finisherSeconds: bestTicks * SECONDS_PER_TICK,
+      swap: getPostSpecSwapMode(states, baseFinishers, getFinisherMemory, getSingleFinisherMemory),
     });
 
     if (remainingSpecs <= 0 || results.length > MAX_STATE_COUNT) {
