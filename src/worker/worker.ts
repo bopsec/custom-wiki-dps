@@ -15,7 +15,6 @@ import { ttkDist } from '@/worker/ttkWorker';
 import { range } from 'd3-array';
 import { DeferredPromise, WORKER_JSON_REPLACER, WORKER_JSON_REVIVER } from '@/utils';
 import { NUMBER_OF_LOADOUTS } from '@/lib/constants';
-import { computeWeaponSwap } from '@/lib/WeaponSwap';
 
 const computePvMValues: Handler<WorkerRequestType.COMPUTE_BASIC> = async (data) => {
   const { loadouts, monster, calcOpts } = data;
@@ -58,21 +57,10 @@ const computePvMValues: Handler<WorkerRequestType.COMPUTE_BASIC> = async (data) 
     console.debug(`Loadout ${i + 1} took ${end - start}ms to calculate`);
   }
 
-  let weaponSwap = null;
-  let weaponSwapError: string | null = null;
-  if (calcOpts.computeWeaponSwap) {
-    try {
-      weaponSwap = computeWeaponSwap(loadouts, monster, calcOpts) || null;
-    } catch (e: unknown) {
-      console.error('Weapon swap calculation failed', e);
-      weaponSwapError = e instanceof Error ? e.message : `Unknown error type: ${e}`;
-    }
-  }
-
   return {
     loadouts: res,
-    weaponSwap,
-    weaponSwapError,
+    weaponSwap: null,
+    weaponSwapError: null,
   };
 };
 

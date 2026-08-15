@@ -24,7 +24,13 @@ import {
 import { Monster } from '@/types/Monster';
 import { MonsterAttribute } from '@/enums/MonsterAttribute';
 import {
-  fetchPlayerSkills, fetchShortlinkData, getCombatStylesForCategory, isDefined, PotionMap,
+  fetchPlayerSkills,
+  fetchShortlinkData,
+  getCombatStylesForCategory,
+  isDefined,
+  PotionMap,
+  WORKER_JSON_REPLACER,
+  WORKER_JSON_REVIVER,
 } from '@/utils';
 import {
   ComputeBasicRequest,
@@ -35,6 +41,10 @@ import type {
   ComputeBasicResponse,
   ComputeReverseResponse,
 } from '@/worker/CalcWorkerTypes';
+import type {
+  WeaponSwapWorkerRequest,
+  WeaponSwapWorkerResponse,
+} from '@/worker/weaponSwapWorker';
 import { getMonsters, INITIAL_MONSTER_INPUTS } from '@/lib/Monsters';
 import { availableEquipment, calculateEquipmentBonusesFromGear } from '@/lib/Equipment';
 import { CalcWorker } from '@/worker/CalcWorker';
@@ -168,6 +178,10 @@ export const parseLoadoutsFromImportedData = (data: ImportableData) => data.load
 });
 
 class GlobalState implements State {
+  private weaponSwapWorker?: Worker;
+
+  private weaponSwapSequence = 0;
+
   serializationVersion = IMPORT_VERSION;
 
   monster: Monster = {
@@ -421,6 +435,40 @@ class GlobalState implements State {
 
   updateCalcTtkDist(loadoutIx: number, ttkDist: PlayerVsNPCCalculatedLoadout['ttkDist']) {
     this.calc.loadouts[loadoutIx].ttkDist = ttkDist;
+  }
+
+  private requestWeaponSwap(data: WeaponSwapWorkerRequest) {
+    this.weaponSwapWorker?.terminate();
+    const sequence = this.weaponSwapSequence + 1;
+    this.weaponSwapSequence = sequence;
+    const worker = new Worker(new URL('./worker/weaponSwapWorker.ts', import.meta.url));
+    this.weaponSwapWorker = worker;
+
+    worker.onmessage = (evt: MessageEvent<string>) => {
+      if (sequence !== this.weaponSwapSequence) {
+        worker.terminate();
+        return;
+      }
+
+      const response = JSON.parse(evt.data, WORKER_JSON_REVIVER) as WeaponSwapWorkerResponse;
+      this.updateCalcResults({
+        weaponSwap: response.error ? null : response.payload || null,
+        weaponSwapError: response.error || null,
+      });
+      worker.terminate();
+      this.weaponSwapWorker = undefined;
+    };
+    worker.onerror = (evt: ErrorEvent) => {
+      if (sequence === this.weaponSwapSequence) {
+        this.updateCalcResults({
+          weaponSwap: null,
+          weaponSwapError: evt.message || 'Unable to calculate weapon swaps.',
+        });
+        this.weaponSwapWorker = undefined;
+      }
+      worker.terminate();
+    };
+    worker.postMessage(JSON.stringify(data, WORKER_JSON_REPLACER));
   }
 
   async loadShortlink(linkId: string) {
@@ -817,7 +865,7 @@ class GlobalState implements State {
         hitDistHideMisses: this.prefs.hitDistsHideZeros,
         detailedOutput: this.debug,
         disableMonsterScaling: this.monster.id === -1,
-        computeWeaponSwap: this.prefs.showWeaponSwap,
+        computeWeaponSwap: false,
       },
     };
     const request = async (type: WorkerRequestType.COMPUTE_BASIC | WorkerRequestType.COMPUTE_REVERSE) => {
@@ -828,7 +876,9 @@ class GlobalState implements State {
 
       console.log(`[GlobalState] Calc response ${WorkerRequestType[type]}`, resp.payload);
       if (type === WorkerRequestType.COMPUTE_BASIC) {
-        this.updateCalcResults((resp as ComputeBasicResponse).payload);
+        this.updateCalcResults({
+          loadouts: (resp as ComputeBasicResponse).payload.loadouts,
+        });
       } else {
         this.updateCalcResults({ loadouts: (resp as ComputeReverseResponse).payload });
       }
@@ -839,6 +889,15 @@ class GlobalState implements State {
       request(WorkerRequestType.COMPUTE_BASIC),
       request(WorkerRequestType.COMPUTE_REVERSE),
     );
+
+    if (this.prefs.showWeaponSwap) {
+      this.requestWeaponSwap(data);
+    } else {
+      this.weaponSwapWorker?.terminate();
+      this.weaponSwapWorker = undefined;
+      this.weaponSwapSequence += 1;
+      this.updateCalcResults({ weaponSwap: null, weaponSwapError: null });
+    }
 
     if (this.prefs.showTtkComparison && !INFINITE_HEALTH_MONSTERS.includes(this.monster.id)) {
       promises.push(
