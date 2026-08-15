@@ -40,7 +40,11 @@ import { getMonsters, INITIAL_MONSTER_INPUTS } from '@/lib/Monsters';
 import { availableEquipment, calculateEquipmentBonusesFromGear } from '@/lib/Equipment';
 import { CalcWorker } from '@/worker/CalcWorker';
 import { spellByName } from '@/types/Spell';
-import { DEFAULT_ATTACK_SPEED, INFINITE_HEALTH_MONSTERS, NUMBER_OF_LOADOUTS } from '@/lib/constants';
+import {
+  DEFAULT_ATTACK_SPEED,
+  INFINITE_HEALTH_MONSTERS,
+  NUMBER_OF_LOADOUTS,
+} from '@/lib/constants';
 import { EquipmentCategory } from './enums/EquipmentCategory';
 import {
   ARM_PRAYERS,

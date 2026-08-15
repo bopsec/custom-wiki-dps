@@ -34,7 +34,7 @@ def getEquipmentData():
         query = {
             'action': 'bucket',
             'format': 'json',
-            'query': 
+            'query':
             (
                 f"bucket('infobox_item')"
                 f".select({fields_csv})"
@@ -81,7 +81,7 @@ EquipmentAliases = namedtuple('EquipmentAliases', ['base_name', 'base_version', 
 def handle_base_variant(all_items, variant_item, base_name, base_versions):
     global data
     base_variant = next((x for x in all_items if x['name'] == base_name and x['version'] in base_versions), None)
-    if base_variant:
+    if base_variant and base_variant['id'] != variant_item['id']:
         data.setdefault(base_variant['id'], EquipmentAliases(base_name, base_variant['version'], [])).alias_ids.append(variant_item['id'])
 
 one_off_renames = {
@@ -212,10 +212,18 @@ def main():
         # Radiant oathplate variants
         elif re.match(r"^Radiant", item['name']):
             handle_base_variant(all_items, item, item['name'].replace("Radiant ", "").capitalize(), '')
-        elif re.match("^Black mask", item['name']) and item['version'] != "(10)":
+        elif re.match("^Black mask", item['name']):
             handle_base_variant(all_items, item, item['name'], ['(10)'])
         elif item['name'] == "Void seal" and item['version'] != "(8)":
             handle_base_variant(all_items, item, item['name'], ['(8)'])
+        # Ring of suffering (i) and (ri) (NMZ/EA/SW)
+        elif re.match(r"Ring of suffering \(r?i\)", item["name"]):
+            handle_base_variant(all_items, item, item['name'], [item['version']])
+        # Agility cape equipped and unequipped variants
+        # NOTE: It's not really possible to ever have the unequipped variants come through in a sync
+        #       but this'll stop duplicate entries appearing in the equipment search
+        elif re.match(r"^Agility cape", item["name"]):
+            handle_base_variant(all_items, item, item['name'], [item['version']])
 
     mapping_dict = {}
     for k, v in sorted(data.items(), key=lambda item: item[1].base_name):

@@ -370,6 +370,99 @@ export class AttackDistribution {
     return ret;
   }
 
+  public firstHitMax(): AttackDistribution {
+    if (this.dists.length === 0) {
+      return this;
+    }
+
+    const firstDist = this.dists[0];
+
+    const firstMax = max(
+      firstDist.hits
+        .filter((h) => h.hitsplats[0]?.accurate)
+        .map((h) => h.hitsplats[0].damage),
+    ) ?? 0;
+
+    const maxedFirstDist = new HitDistribution(
+      firstDist.hits.map((h) => {
+        if (!h.hitsplats[0]?.accurate) {
+          return h;
+        }
+
+        return new WeightedHit(
+          h.probability,
+          [
+            new Hitsplat(firstMax, true),
+            ...h.hitsplats.slice(1),
+          ],
+        );
+      }),
+    ).flatten();
+
+    return new AttackDistribution([
+      maxedFirstDist,
+      ...this.dists.slice(1),
+    ]);
+  }
+
+  public firstHitAccurate(): AttackDistribution {
+    if (this.dists.length === 0) {
+      return this;
+    }
+
+    const firstDist = this.dists[0];
+
+    const accurateFirstDist = new HitDistribution(
+      firstDist.hits
+        .filter((h) => h.hitsplats[0]?.accurate)
+        .map((h) => new WeightedHit(
+          h.probability,
+          [...h.hitsplats],
+        )),
+    );
+
+    const totalProbability = sum(
+      accurateFirstDist.hits,
+      (h) => h.probability,
+    );
+
+    return new AttackDistribution([
+      accurateFirstDist.scaleProbability(1 / totalProbability),
+      ...this.dists.slice(1),
+    ]);
+  }
+
+  public firstHitMinimum(minimum: number): AttackDistribution {
+    if (this.dists.length === 0) {
+      return this;
+    }
+
+    const firstDist = this.dists[0];
+
+    const accuracy = sum(
+      firstDist.hits
+        .filter((h) => h.hitsplats[0]?.accurate)
+        .map((h) => h.probability),
+    );
+
+    const firstMax = max(
+      firstDist.hits
+        .filter((h) => h.hitsplats[0]?.accurate)
+        .map((h) => h.hitsplats[0].damage),
+    ) ?? minimum;
+
+    const newFirstDist = HitDistribution.linear(
+      accuracy,
+      minimum,
+      Math.max(minimum, firstMax),
+    );
+
+    return new AttackDistribution([
+      newFirstDist,
+      ...this.dists.slice(1),
+    ]);
+  }
+
   private map(m: (d: HitDistribution) => HitDistribution) {
     return new AttackDistribution(
       this.dists.map(m),

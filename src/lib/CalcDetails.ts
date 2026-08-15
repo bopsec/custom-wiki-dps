@@ -79,6 +79,7 @@ export enum DetailKey {
   MIN_HIT_FANG = 'Min hit fang',
   MIN_HIT_SPEC = 'Min hit spec',
   MIN_HIT_WARDENS = 'Min hit wardens',
+  MIN_HIT_MAD_ANGEL = 'Min hit mad angel',
   MIN_HIT_FINAL = 'Min hit',
   PLAYER_ACCURACY_DAWNBRINGER = 'Player accuracy override dawnbringer',
   PLAYER_ACCURACY_SCURRIUS_RAT = 'Player accuracy override giant rat',

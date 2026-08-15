@@ -135,10 +135,6 @@ def main():
 
     # Loop over the equipment data from the wiki
     for v in wiki_data:
-        if v['page_name_sub'] in data:
-            continue
-
-        print(f"Processing {v['page_name_sub']}")
 
         try:
             item_id = int(v.get('item_id')[0]) if v.get('item_id') else None
@@ -146,6 +142,13 @@ def main():
             # Item has an invalid ID, do not show it here as it's probably historical or something.
             print("Skipping - invalid item ID (not an int)")
             continue
+
+        if (page_name_sub := v['page_name_sub']) in data:
+            # Handle cases where page_name_sub is identical across multiple item versions
+            # i.e. the different imbuings of Black Mask (NMZ vs SW vs Emirs)
+            page_name_sub = f'{page_name_sub}_{item_id}'
+
+        print(f"Processing {page_name_sub}")
 
         equipment = {
             'name': v['page_name'],
@@ -195,11 +198,11 @@ def main():
         if equipment['name'] in ITEMS_TO_SKIP:
             continue
 
-        if "Keris partisan of amascut" in equipment['name'] and "Outside ToA" in v['page_name_sub']:
+        if "Keris partisan of amascut" in equipment['name'] and "Outside ToA" in page_name_sub:
             continue
 
         # Set the current equipment item to the calc's equipment list
-        data[v['page_name_sub']] = equipment
+        data[page_name_sub] = equipment
 
         if not equipment['image'] == '':
             required_imgs.append(equipment['image'])

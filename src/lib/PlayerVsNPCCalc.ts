@@ -42,6 +42,7 @@ import {
   IMMUNE_TO_NON_SALAMANDER_MELEE_DAMAGE_NPC_IDS,
   IMMUNE_TO_RANGED_DAMAGE_NPC_IDS,
   KEPHRI_OVERLORD_IDS,
+  MAD_ANGEL_IDS,
   MAGGOT_KING_ID,
   NIGHTMARE_TOTEM_IDS,
   OLM_HEAD_IDS,
@@ -72,6 +73,7 @@ import {
   AmmoApplicability,
   ammoApplicability,
   calculateAttackSpeed,
+  getHighestOffensiveStyle,
   WEAPON_SPEC_COSTS,
 } from '@/lib/Equipment';
 import BaseCalc, { CalcOpts, InternalOpts } from '@/lib/BaseCalc';
@@ -929,7 +931,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     } else if (this.wearing(['Sanguinesti staff', 'Holy sanguinesti staff'])) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3));
     } else if (this.wearing('Dawnbringer')) {
-      maxHit = Math.max(1, Math.trunc(magicLevel / 6 - 1));
+      maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 2));
       if (this.opts.usingSpecialAttack) { // guaranteed hit between 75-150, ignores bonuses
         return [75, 150];
       }
@@ -1011,6 +1013,10 @@ export default class PlayerVsNPCCalc extends BaseCalc {
 
     if (blackMaskBonus) {
       maxHit = Math.trunc(maxHit * 23 / 20);
+    }
+
+    if (this.wearing('Dawnbringer')) {
+      maxHit = Math.max(2, Math.trunc(maxHit / 2));
     }
 
     if (mattrs.includes(MonsterAttribute.DRAGON)) {
@@ -1256,6 +1262,18 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       return this.track(DetailKey.PLAYER_ACCURACY_FINAL, 1.0);
     }
 
+    if (this.monster.name === 'Acidic Araxyte' || this.monster.name === 'Mirrorback Araxyte') {
+      if (this.player.equipment.weapon?.name === 'Noxious halberd') {
+        return this.track(DetailKey.PLAYER_ACCURACY_FINAL, 1.0);
+      }
+      if (this.player.style.type === 'ranged' && getHighestOffensiveStyle(this.player.offensive) === 'ranged' && !this.isAmmoInvalid() && (this.wearing(['Heavy ballista', 'Light ballista']) || this.player.equipment.weapon?.category === EquipmentCategory.CROSSBOW)) {
+        return this.track(DetailKey.PLAYER_ACCURACY_FINAL, 1.0);
+      }
+      if (this.player.style.type === 'crush' && getHighestOffensiveStyle(this.player.offensive) === 'crush') {
+        return this.track(DetailKey.PLAYER_ACCURACY_FINAL, 1.0);
+      }
+    }
+
     const atk = this.getMaxAttackRoll();
     const def = this.getNPCDefenceRoll();
 
@@ -1344,11 +1362,21 @@ export default class PlayerVsNPCCalc extends BaseCalc {
   }
 
   private getDistributionImpl(): AttackDistribution {
-    const attackerDist = this.getAttackerDist();
+    let attackerDist = this.getAttackerDist();
 
     let styleType = this.player.style.type;
     if (this.opts.usingSpecialAttack && this.wearing('Voidwaker')) {
       styleType = 'magic';
+    }
+
+    if (MAD_ANGEL_IDS.includes(this.monster.id) && (this.monster.inputs.phase === 'Sword Cleave' || this.monster.inputs.phase === 'Perfect Lightning')) {
+      attackerDist = attackerDist.firstHitAccurate();
+      if (this.monster.inputs.phase === 'Perfect Lightning') {
+        attackerDist = attackerDist.firstHitMax();
+      } else if (this.monster.inputs.phase === 'Sword Cleave' && this.player.equipment.weapon?.name !== 'Dual macuahuitl') {
+        const minimum = this.trackFactor(DetailKey.MIN_HIT_MAD_ANGEL, attackerDist.getMax(), [1, 2]);
+        attackerDist = attackerDist.firstHitMinimum(minimum);
+      }
     }
 
     const npcDist = attackerDist.transform(this.applyNpcTransforms(styleType));
@@ -1549,6 +1577,18 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       );
     }
 
+    if (this.monster.name === 'Acidic Araxyte' || this.monster.name === 'Mirrorback Araxyte') {
+      if (this.player.equipment.weapon?.name === 'Noxious halberd') {
+        return new AttackDistribution([HitDistribution.single(1.0, [new Hitsplat(max)])]);
+      }
+      if (style === 'ranged' && getHighestOffensiveStyle(this.player.offensive) === 'ranged' && (this.wearing(['Heavy ballista', 'Light ballista']) || this.player.equipment.weapon?.category === EquipmentCategory.CROSSBOW)) {
+        return new AttackDistribution([HitDistribution.single(1.0, [new Hitsplat(max)])]);
+      }
+      if (style === 'crush' && getHighestOffensiveStyle(this.player.offensive) === 'crush') {
+        return new AttackDistribution([HitDistribution.single(1.0, [new Hitsplat(max)])]);
+      }
+    }
+
     const isMaggotKingMeleePunish = this.isUsingMeleeStyle() && MAGGOT_KING_ID.includes(this.monster.id) && this.monster.inputs.phase === 'Melee Punish';
     let firstHitAcc = acc;
     if (isMaggotKingMeleePunish) {
@@ -1583,7 +1623,13 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       if (isMaggotKingMeleePunish) {
         firstMax = this.trackFactor(DetailKey.MAX_HIT_MAGGOT_MELEE_PUNISH, firstMax, [150, 100]);
       }
-      const firstHit = new AttackDistribution([HitDistribution.linear(firstHitAcc, min, Math.max(min, firstMax))]);
+
+      let firstMin = min;
+      if (MAD_ANGEL_IDS.includes(this.monster.id) && this.monster.inputs.phase === 'Sword Cleave') {
+        firstMin = this.trackFactor(DetailKey.MIN_HIT_MAD_ANGEL, firstMax, [1, 2]);
+      }
+
+      const firstHit = new AttackDistribution([HitDistribution.linear(firstHitAcc, firstMin, Math.max(firstMin, firstMax))]);
       const secondHit = HitDistribution.linear(acc, min, Math.max(min, secondMax));
       dist = firstHit.transform(
         (h) => {
@@ -2368,11 +2414,11 @@ export default class PlayerVsNPCCalc extends BaseCalc {
   private static tbowScaling = (current: number, magic: number, accuracyMode: boolean): number => {
     const factor = accuracyMode ? 10 : 14;
     const base = accuracyMode ? 140 : 250;
+    const clamp = accuracyMode ? 140 : 250;
 
     const t2 = Math.trunc((3 * magic - factor) / 100);
     const t3 = Math.trunc((Math.trunc(3 * magic / 10) - (10 * factor)) ** 2 / 100);
-
-    const bonus = base + t2 - t3;
+    const bonus = Math.max(0, Math.min(clamp, base + t2 - t3));
     return Math.trunc(current * bonus / 100);
   };
 

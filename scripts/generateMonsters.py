@@ -264,6 +264,8 @@ def main():
                 or '(pvm arena)' in str.lower(monster['name'])
                 # ...monsters from DMM Apocalypse
                 or '(deadman: apocalypse)' in str.lower(monster['name'])
+                # ...leagues monsters
+                or '(echo)' in str.lower(monster['name'])
         ):
             continue
 
@@ -279,7 +281,7 @@ def main():
         monster = strip_parser_tags(monster)
 
         data.append(monster)
-        if not monster['image'] == '':
+        if monster['image'] != '':
             required_imgs.append(monster['image'])
 
     with open('manual_monster.json', 'r') as f:

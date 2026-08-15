@@ -459,6 +459,7 @@ export const ALWAYS_MAX_HIT_MONSTERS = {
     12814, // frem warband archer
     ...TOA_WARDEN_CORE_EJECTED_IDS,
     ...YAMA_VOID_FLARE_IDS,
+    14180, // Judge of Yama
   ],
   ranged: [
     11711, 11714, // baboon mage
@@ -466,12 +467,14 @@ export const ALWAYS_MAX_HIT_MONSTERS = {
     11717, // cursed baboon
     11715, // baboon shaman
     ...YAMA_VOID_FLARE_IDS,
+    14180, // Judge of Yama
   ],
   magic: [
     11709, 11712, // baboon brawler
     12816, // frem warband berserker
     14151, 14150, // Royal titans elementals
     ...YAMA_VOID_FLARE_IDS,
+    14180, // Judge of Yama
   ],
 };
 
@@ -480,6 +483,7 @@ export const ALWAYS_MAX_HIT_MONSTERS = {
  */
 export const GUARANTEED_ACCURACY_MONSTERS: number[] = [
   5916, // Spawn (abyssal sire)
+  14180, // Judge of Yama
 ];
 
 /**
@@ -542,6 +546,10 @@ YAMA_IDS.forEach((id) => { MONSTER_PHASES_BY_ID[id] = YAMA_PHASES; });
 export const MAGGOT_KING_ID = [15742];
 export const MAGGOT_KING_PHASES = ['Standard', 'Melee Punish'];
 MAGGOT_KING_ID.forEach((id) => { MONSTER_PHASES_BY_ID[id] = MAGGOT_KING_PHASES; });
+
+export const MAD_ANGEL_IDS = [16309, 16315, 16305, 16314];
+export const MAD_ANGEL_PHASES = ['Standard', 'Sword Cleave', 'Perfect Lightning'];
+MAD_ANGEL_IDS.forEach((id) => { MONSTER_PHASES_BY_ID[id] = MAD_ANGEL_PHASES; });
 
 export const INFINITE_HEALTH_MONSTERS: number[] = [
   14779, // gemstone crab
