@@ -18,8 +18,26 @@ import { useStore } from '@/state';
 import SectionAccordion from '@/app/components/generic/SectionAccordion';
 import NumberInput from '@/app/components/generic/NumberInput';
 import { computeSpecWeaponSwaps } from '@/lib/SpecWeaponSwap';
-import type { SpecSwapMode, SpecSwapRange } from '@/lib/SpecWeaponSwap';
+import type { SpecSwapModes, SpecSwapRange } from '@/lib/SpecWeaponSwap';
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
+
+enum SwapMode {
+  CONTINUOUS,
+  DISCONTINUOUS,
+}
+
+const modeOptions = [
+  {
+    label: 'Continuous',
+    value: SwapMode.CONTINUOUS,
+    description: 'Assumes attacks continue naturally after the monster dies.',
+  },
+  {
+    label: 'Discontinuous',
+    value: SwapMode.DISCONTINUOUS,
+    description: 'Shows swap breakpoints with the final attack cycle removed.',
+  },
+];
 
 const warningClassName = [
   'w-full bg-yellow-500 text-white px-4 py-1 text-sm border-yellow-400',
@@ -91,28 +109,31 @@ const CustomTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({
   return null;
 };
 
-const PostSpecSwapGraph: React.FC<{ swap: SpecSwapMode }> = ({ swap }) => {
-  const yDomainMax = useMemo(() => {
-    const high = max(swap.points, (point) => point.expectedSeconds) || 1;
-    return Math.ceil(high);
-  }, [swap.points]);
+const PostSpecSwapGraph: React.FC<{ swap: SpecSwapModes }> = ({ swap }) => {
+  const [mode, setMode] = useState(modeOptions[0]);
+  const activeSwap = mode.value === SwapMode.CONTINUOUS ? swap.continuous : swap.discontinuous;
 
-  const chartData = useMemo((): SpecSwapChartEntry[] => swap.points.map((point) => {
+  const yDomainMax = useMemo(() => {
+    const high = max(activeSwap.points, (point) => point.expectedSeconds) || 1;
+    return Math.ceil(high);
+  }, [activeSwap.points]);
+
+  const chartData = useMemo((): SpecSwapChartEntry[] => activeSwap.points.map((point) => {
     const entry: SpecSwapChartEntry = {
       name: point.hitpoints.toString(),
       hitpoints: point.hitpoints,
       weaponOnlySeconds: point.weaponOnlyExpectedSeconds,
     };
-    swap.loadouts.forEach((loadout) => {
+    activeSwap.loadouts.forEach((loadout) => {
       entry[loadout.loadoutName] = null;
     });
     entry[point.loadoutName] = parseFloat(point.expectedSeconds.toFixed(2));
     return entry;
-  }).reverse(), [swap]);
+  }).reverse(), [activeSwap]);
 
   const ranges = useMemo(
-    () => [...swap.ranges].sort((a, b) => b.toHp - a.toHp),
-    [swap.ranges],
+    () => [...activeSwap.ranges].sort((a, b) => b.toHp - a.toHp),
+    [activeSwap.ranges],
   );
 
   return (
@@ -145,7 +166,7 @@ const PostSpecSwapGraph: React.FC<{ swap: SpecSwapMode }> = ({ swap }) => {
             content={(props) => <CustomTooltip {...props} />}
           />
           <Legend wrapperStyle={{ fontSize: '.9em', top: 0 }} />
-          {swap.loadouts.map((loadout) => (
+          {activeSwap.loadouts.map((loadout) => (
             <Line
               key={loadout.loadoutIndex}
               type="monotone"
@@ -158,6 +179,23 @@ const PostSpecSwapGraph: React.FC<{ swap: SpecSwapMode }> = ({ swap }) => {
           ))}
         </LineChart>
       </ResponsiveContainer>
+      <div className="mt-4 flex flex-wrap gap-2 dark:text-white">
+        {modeOptions.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            title={opt.description}
+            onClick={() => setMode(opt)}
+            className={`px-3 py-1 border text-sm transition-colors ${
+              mode.value === opt.value
+                ? 'bg-orange-400 dark:bg-orange-700 border-orange-500 text-white'
+                : 'bg-btns-400 dark:bg-dark-500 border-body-100 dark:border-dark-300'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
       <div className="mt-4 overflow-x-auto text-black dark:text-body-200">
         <table className="w-full">
           <thead>
