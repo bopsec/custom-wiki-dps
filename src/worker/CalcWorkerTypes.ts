@@ -8,7 +8,7 @@ import {
 import type { WeaponSwapResult } from '@/lib/WeaponSwap';
 import type {
   SpecSwapAttack,
-  SpecSwapModes,
+  SpecSwapMode,
   SpecSwapOutcomeOverride,
 } from '@/lib/SpecWeaponSwap';
 
@@ -82,6 +82,7 @@ export interface SpecSwapGraphRequest extends WorkerRequest<WorkerRequestType.CO
     monster: Monster,
     attacks: SpecSwapAttack[],
     overrides: SpecSwapOutcomeOverride[],
+    continuous: boolean,
   }
 }
 
@@ -128,7 +129,7 @@ export interface TtkResponseParallel extends WorkerResponse<WorkerRequestType.CO
 }
 
 export interface SpecSwapGraphResponse extends WorkerResponse<WorkerRequestType.COMPUTE_SPEC_SWAP_GRAPH> {
-  payload: SpecSwapModes,
+  payload: SpecSwapMode,
 }
 
 export type CalcResponsesUnion =

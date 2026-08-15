@@ -114,9 +114,9 @@ const compare: Handler<WorkerRequestType.COMPARE> = async (data) => {
 
 const computeSpecSwapGraph: Handler<WorkerRequestType.COMPUTE_SPEC_SWAP_GRAPH> = async (data) => {
   const {
-    loadouts, monster, attacks, overrides,
+    loadouts, monster, attacks, overrides, continuous,
   } = data;
-  return computeSpecWeaponSwapGraph(loadouts, monster, attacks, overrides);
+  return computeSpecWeaponSwapGraph(loadouts, monster, attacks, overrides, continuous);
 };
 
 // workers that compute a single ttk dist and then terminate

@@ -30,7 +30,7 @@ import {
   WorkerRequestType,
 } from '@/worker/CalcWorkerTypes';
 import type {
-  SpecSwapModes,
+  SpecSwapMode,
   SpecSwapOutcomeOverride,
   SpecSwapRange,
   SpecSwapResult,
@@ -152,16 +152,11 @@ const PostSpecSwapGraph: React.FC<{
   const worker = useCalc();
   const [mode, setMode] = useState(modeOptions[0]);
   const [overrides, setOverrides] = useState<SpecSwapOutcomeOverride[]>([]);
-  const [swap, setSwap] = useState<SpecSwapModes | null>(null);
+  const [swap, setSwap] = useState<SpecSwapMode | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasOverrides = overrides.length > 0;
-  const activeSwap = useMemo(() => {
-    if (!swap) {
-      return null;
-    }
-    return mode.value === SwapMode.CONTINUOUS ? swap.continuous : swap.discontinuous;
-  }, [mode.value, swap]);
+  const activeSwap = swap;
   const outcomeControls = result.attacks
     .map((attack, attackIndex) => ({ attack, attackIndex }))
     .filter(({ attack }) => (
@@ -187,6 +182,7 @@ const PostSpecSwapGraph: React.FC<{
         monster,
         attacks: result.attacks,
         overrides,
+        continuous: mode.value === SwapMode.CONTINUOUS,
       },
     }).then((response) => {
       if (!cancelled) {
@@ -203,7 +199,7 @@ const PostSpecSwapGraph: React.FC<{
     return () => {
       cancelled = true;
     };
-  }, [loadouts, monster, overrides, result.attacks, worker]);
+  }, [loadouts, mode.value, monster, overrides, result.attacks, worker]);
 
   const yDomainMax = useMemo(() => {
     const high = max(activeSwap?.points || [], (point) => point.expectedSeconds) || 1;

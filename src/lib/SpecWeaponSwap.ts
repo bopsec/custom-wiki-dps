@@ -101,6 +101,10 @@ const DEFENCE_REDUCTION_SPEC_WEAPONS = [
   'Accursed sceptre (a)',
   'Eye of ayak',
 ];
+const DAMAGE_REDUCTION_SPEC_WEAPONS = [
+  'Bandos godsword',
+  'Eye of ayak',
+];
 
 const EMPTY_REDUCTIONS: DefenceReductions = {
   vulnerability: false,
@@ -493,6 +497,14 @@ const getAveragePositiveDamage = (histogram: Map<number, number>): number => {
   return hitProbability > 0 ? Math.round(weightedDamage / hitProbability) : 0;
 };
 
+const getExpectedDamage = (histogram: Map<number, number>): number => {
+  let expectedDamage = 0;
+  for (const [damage, probability] of histogram.entries()) {
+    expectedDamage += damage * probability;
+  }
+  return Math.round(expectedDamage);
+};
+
 const buildAttackCandidate = (
   loadout: Player,
   loadoutIndex: number,
@@ -563,17 +575,10 @@ const makeInitialState = (maxHp: number, reductions: DefenceReductions): SpecSta
   probability: 1,
 }];
 
-const emptySwapModes = (): SpecSwapModes => ({
-  continuous: {
-    points: [],
-    ranges: [],
-    loadouts: [],
-  },
-  discontinuous: {
-    points: [],
-    ranges: [],
-    loadouts: [],
-  },
+const emptySwapMode = (): SpecSwapMode => ({
+  points: [],
+  ranges: [],
+  loadouts: [],
 });
 
 const getOutcomeOverride = (
@@ -591,7 +596,7 @@ const applyOutcomeAttack = (
   getAttackCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => AttackCandidate | null,
 ): SpecState[] => {
   const override = getOutcomeOverride(overrides, attackIndex);
-  if (override.mode === 'average') {
+  if (override.mode === 'average' && !DAMAGE_REDUCTION_SPEC_WEAPONS.includes(attack.weaponName)) {
     return applyAttack(states, attack, getAttackCandidate);
   }
 
@@ -608,6 +613,9 @@ const applyOutcomeAttack = (
       }
       if (override.mode === 'hit') {
         return getAveragePositiveDamage(attackState.histogram);
+      }
+      if (override.mode === 'average') {
+        return getExpectedDamage(attackState.histogram);
       }
       return Math.max(0, Math.min(attackState.maxHit, Math.round(override.damage || 0)));
     })();
@@ -634,7 +642,8 @@ export const computeSpecWeaponSwapGraph = (
   monster: Monster,
   attacks: SpecSwapAttack[],
   overrides: SpecSwapOutcomeOverride[],
-): SpecSwapModes => {
+  graphContinuous: boolean,
+): SpecSwapMode => {
   const baseMonster = buildBaseMonster(monster);
   const maxHp = baseMonster.skills.hp;
   const initialReductions = cloneReductions(monster.inputs.defenceReductions);
@@ -649,7 +658,7 @@ export const computeSpecWeaponSwapGraph = (
   });
 
   if (attacks.length === 0 || baseFinishers.length === 0) {
-    return emptySwapModes();
+    return emptySwapMode();
   }
 
   const attackCache = new Map<string, AttackCandidate | null>();
@@ -729,26 +738,15 @@ export const computeSpecWeaponSwapGraph = (
   const expectedHp = getExpectedHp(states);
   const maxChartHp = hasDefenceReductionSpec(attacks) ? Math.max(1, Math.ceil(expectedHp)) : maxHp;
 
-  return {
-    continuous: getPostSpecSwapMode(
-      states,
-      baseFinishers,
-      getFinisherCandidate,
-      getFinisherMemory,
-      getSingleFinisherMemory,
-      true,
-      maxChartHp,
-    ),
-    discontinuous: getPostSpecSwapMode(
-      states,
-      baseFinishers,
-      getFinisherCandidate,
-      getFinisherMemory,
-      getSingleFinisherMemory,
-      false,
-      maxChartHp,
-    ),
-  };
+  return getPostSpecSwapMode(
+    states,
+    baseFinishers,
+    getFinisherCandidate,
+    getFinisherMemory,
+    getSingleFinisherMemory,
+    graphContinuous,
+    maxChartHp,
+  );
 };
 
 export const computeSpecWeaponSwaps = (
