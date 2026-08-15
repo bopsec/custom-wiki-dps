@@ -16,7 +16,6 @@ import { range } from 'd3-array';
 import { DeferredPromise, WORKER_JSON_REPLACER, WORKER_JSON_REVIVER } from '@/utils';
 import { NUMBER_OF_LOADOUTS } from '@/lib/constants';
 import { computeWeaponSwap } from '@/lib/WeaponSwap';
-import { computeSpecWeaponSwapGraph } from '@/lib/SpecWeaponSwap';
 
 const computePvMValues: Handler<WorkerRequestType.COMPUTE_BASIC> = async (data) => {
   const { loadouts, monster, calcOpts } = data;
@@ -110,13 +109,6 @@ const compare: Handler<WorkerRequestType.COMPARE> = async (data) => {
     },
     domainMax,
   };
-};
-
-const computeSpecSwapGraph: Handler<WorkerRequestType.COMPUTE_SPEC_SWAP_GRAPH> = async (data) => {
-  const {
-    loadouts, monster, attacks, overrides, continuous,
-  } = data;
-  return computeSpecWeaponSwapGraph(loadouts, monster, attacks, overrides, continuous);
 };
 
 // workers that compute a single ttk dist and then terminate
@@ -243,11 +235,6 @@ self.onmessage = async (evt: MessageEvent<string>) => {
 
       case WorkerRequestType.COMPARE: {
         res.payload = await compare(data, req);
-        break;
-      }
-
-      case WorkerRequestType.COMPUTE_SPEC_SWAP_GRAPH: {
-        res.payload = await computeSpecSwapGraph(data, req);
         break;
       }
 

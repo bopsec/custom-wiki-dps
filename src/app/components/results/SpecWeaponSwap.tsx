@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useEffect, useMemo, useRef, useState,
+} from 'react';
 import { observer } from 'mobx-react-lite';
 import {
   CartesianGrid,
@@ -23,12 +25,7 @@ import { useStore } from '@/state';
 import SectionAccordion from '@/app/components/generic/SectionAccordion';
 import NumberInput from '@/app/components/generic/NumberInput';
 import { computeSpecWeaponSwaps } from '@/lib/SpecWeaponSwap';
-import { useCalc } from '@/worker/CalcWorker';
-import {
-  SpecSwapGraphRequest,
-  SpecSwapGraphResponse,
-  WorkerRequestType,
-} from '@/worker/CalcWorkerTypes';
+import { WORKER_JSON_REPLACER, WORKER_JSON_REVIVER } from '@/utils';
 import type {
   SpecSwapMode,
   SpecSwapOutcomeOverride,
@@ -37,6 +34,10 @@ import type {
 } from '@/lib/SpecWeaponSwap';
 import type { Player } from '@/types/Player';
 import type { Monster } from '@/types/Monster';
+import type {
+  SpecSwapGraphWorkerRequest,
+  SpecSwapGraphWorkerResponse,
+} from '@/worker/specSwapGraphWorker';
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 
 enum SwapMode {
@@ -149,7 +150,7 @@ const PostSpecSwapGraph: React.FC<{
   monster: Monster,
   result: SpecSwapResult,
 }> = ({ loadouts, monster, result }) => {
-  const worker = useCalc();
+  const workerRef = useRef<Worker | null>(null);
   const [mode, setMode] = useState(modeOptions[0]);
   const [overrides, setOverrides] = useState<SpecSwapOutcomeOverride[]>([]);
   const [swap, setSwap] = useState<SpecSwapMode | null>(null);
@@ -171,35 +172,54 @@ const PostSpecSwapGraph: React.FC<{
 
   useEffect(() => {
     let cancelled = false;
+    workerRef.current?.terminate();
     setLoading(true);
     setError(null);
     setSwap(null);
 
-    worker.do<SpecSwapGraphRequest, SpecSwapGraphResponse>({
-      type: WorkerRequestType.COMPUTE_SPEC_SWAP_GRAPH,
-      data: {
-        loadouts,
-        monster,
-        attacks: result.attacks,
-        overrides,
-        continuous: mode.value === SwapMode.CONTINUOUS,
-      },
-    }).then((response) => {
+    const worker = new Worker(new URL('../../../worker/specSwapGraphWorker.ts', import.meta.url));
+    workerRef.current = worker;
+    worker.onmessage = (evt: MessageEvent<string>) => {
       if (!cancelled) {
-        setSwap(response.payload);
+        const response = JSON.parse(evt.data, WORKER_JSON_REVIVER) as SpecSwapGraphWorkerResponse;
+        if (response.error) {
+          setError(response.error);
+        } else {
+          setSwap(response.payload || null);
+        }
         setLoading(false);
       }
-    }).catch((e: Error) => {
+      worker.terminate();
+      if (workerRef.current === worker) {
+        workerRef.current = null;
+      }
+    };
+    worker.onerror = (e: ErrorEvent) => {
       if (!cancelled) {
         setError(e.message);
         setLoading(false);
       }
-    });
+      worker.terminate();
+      if (workerRef.current === worker) {
+        workerRef.current = null;
+      }
+    };
+    worker.postMessage(JSON.stringify({
+      loadouts,
+      monster,
+      attacks: result.attacks,
+      overrides,
+      continuous: mode.value === SwapMode.CONTINUOUS,
+    } satisfies SpecSwapGraphWorkerRequest, WORKER_JSON_REPLACER));
 
     return () => {
       cancelled = true;
+      worker.terminate();
+      if (workerRef.current === worker) {
+        workerRef.current = null;
+      }
     };
-  }, [loadouts, mode.value, monster, overrides, result.attacks, worker]);
+  }, [loadouts, mode.value, monster, overrides, result.attacks]);
 
   const yDomainMax = useMemo(() => {
     const high = max(activeSwap?.points || [], (point) => point.expectedSeconds) || 1;

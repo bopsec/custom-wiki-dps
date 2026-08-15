@@ -6,11 +6,6 @@ import {
   CompareResult, CompareXAxis, CompareYAxis,
 } from '@/lib/Comparator';
 import type { WeaponSwapResult } from '@/lib/WeaponSwap';
-import type {
-  SpecSwapAttack,
-  SpecSwapMode,
-  SpecSwapOutcomeOverride,
-} from '@/lib/SpecWeaponSwap';
 
 /**
  * Requests
@@ -22,7 +17,6 @@ export enum WorkerRequestType {
   COMPUTE_TTK_PARALLEL,
   COMPUTE_TTK,
   COMPARE,
-  COMPUTE_SPEC_SWAP_GRAPH,
 }
 
 export interface WorkerRequest<T extends WorkerRequestType> {
@@ -76,23 +70,12 @@ export interface TtkRequestParallel extends WorkerRequest<WorkerRequestType.COMP
   data: TtkRequest['data']
 }
 
-export interface SpecSwapGraphRequest extends WorkerRequest<WorkerRequestType.COMPUTE_SPEC_SWAP_GRAPH> {
-  data: {
-    loadouts: Player[],
-    monster: Monster,
-    attacks: SpecSwapAttack[],
-    overrides: SpecSwapOutcomeOverride[],
-    continuous: boolean,
-  }
-}
-
 export type CalcRequestsUnion =
   ComputeBasicRequest |
   ComputeReverseRequest |
   CompareRequest |
   TtkRequest |
-  TtkRequestParallel |
-  SpecSwapGraphRequest;
+  TtkRequestParallel;
 
 /**
  * Responses
@@ -128,17 +111,12 @@ export interface TtkResponseParallel extends WorkerResponse<WorkerRequestType.CO
   payload: TtkResponse['payload'],
 }
 
-export interface SpecSwapGraphResponse extends WorkerResponse<WorkerRequestType.COMPUTE_SPEC_SWAP_GRAPH> {
-  payload: SpecSwapMode,
-}
-
 export type CalcResponsesUnion =
   ComputeBasicResponse |
   ComputeReverseResponse |
   CompareResponse |
   TtkResponse |
-  TtkResponseParallel |
-  SpecSwapGraphResponse;
+  TtkResponseParallel;
 export type CalcResponse<T extends WorkerRequestType> = CalcResponsesUnion & { type: T };
 
 export type Handler<T extends WorkerRequestType> = (data: Extract<CalcRequestsUnion, { type: T }>['data'], rawRequest: CalcRequestsUnion) => Promise<CalcResponse<T>['payload']>;
