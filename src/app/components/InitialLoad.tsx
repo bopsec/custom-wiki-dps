@@ -23,7 +23,7 @@ const InitialLoad: React.FC = observer(() => {
       if (id) {
         // If there was a share ID provided, load the data for it into the calculator
         await store.loadShortlink(id);
-        window.history.replaceState({}, '', process.env.NEXT_PUBLIC_BASE_PATH);
+        window.history.replaceState({}, '', process.env.NEXT_PUBLIC_BASE_PATH || '/');
 
         if (process.env.NEXT_PUBLIC_LOCAL_STORE_SHORTLINKS) {
           store.startStorageUpdater();
