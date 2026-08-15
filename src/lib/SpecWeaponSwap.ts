@@ -91,6 +91,17 @@ interface SpecState {
 
 const MAX_RESULTS = 10;
 const MAX_STATE_COUNT = 50_000;
+const DEFENCE_REDUCTION_SPEC_WEAPONS = [
+  'Elder maul',
+  'Dragon warhammer',
+  'Arclight',
+  'Emberlight',
+  'Bandos godsword',
+  'Tonalztics of ralos',
+  'Accursed sceptre',
+  'Accursed sceptre (a)',
+  'Eye of ayak',
+];
 
 const EMPTY_REDUCTIONS: DefenceReductions = {
   vulnerability: false,
@@ -178,6 +189,10 @@ const applySpecDefenceReduction = (
 
   return next;
 };
+
+const hasDefenceReductionSpec = (attacks: SpecSwapAttack[]): boolean => (
+  attacks.some((attack) => DEFENCE_REDUCTION_SPEC_WEAPONS.includes(attack.weaponName))
+);
 
 const histogramFromCalc = (calc: PlayerVsNPCCalc): Map<number, number> => {
   const histogram = new Map<number, number>();
@@ -650,7 +665,7 @@ export const computeSpecWeaponSwapGraph = (
     makeInitialState(maxHp, initialReductions),
   );
   const expectedHp = getExpectedHp(states);
-  const maxChartHp = Math.max(1, Math.ceil(expectedHp));
+  const maxChartHp = hasDefenceReductionSpec(attacks) ? Math.max(1, Math.ceil(expectedHp)) : maxHp;
 
   return {
     continuous: getPostSpecSwapMode(
@@ -761,7 +776,7 @@ export const computeSpecWeaponSwaps = (
   ) => {
     const expectedHp = getExpectedHp(states);
     const finishTicks = expectedRemainingTicks(states, getFinisherMemory, true);
-    const maxChartHp = Math.max(1, Math.ceil(expectedHp));
+    const maxChartHp = hasDefenceReductionSpec(attacks) ? Math.max(1, Math.ceil(expectedHp)) : maxHp;
     const { best: finisher, bestTicks } = getDisplayFinisher(
       states,
       getSingleFinisherMemory,
