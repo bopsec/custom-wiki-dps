@@ -340,35 +340,85 @@ const getDisplayFinisher = (
   return { best, bestTicks };
 };
 
-const getDisplayFinisherAtHp = (
+const getBestNextFinisherAtHp = (
   hp: number,
   states: SpecState[],
+  getFinisherCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => FinishCandidate | null,
+  getFinisherMemory: (reductions: DefenceReductions, continuous: boolean) => Float64Array,
   getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, continuous: boolean) => Float64Array,
   baseFinishers: FinishCandidate[],
   continuous: boolean,
 ) => {
   let best = baseFinishers[0];
   let bestTicks = Infinity;
+  let bestWeaponOnlyTicks = Infinity;
 
   for (const finisher of baseFinishers) {
     let expectedTicks = 0;
+    let weaponOnlyExpectedTicks = 0;
+
     for (const state of states) {
-      expectedTicks += (
-        state.probability * getSingleFinisherMemory(finisher.loadoutIndex, state.reductions, continuous)[hp]
+      const stateFinisher = getFinisherCandidate(finisher.loadoutIndex, hp, state.reductions);
+      if (!stateFinisher) {
+        expectedTicks = Infinity;
+        weaponOnlyExpectedTicks = Infinity;
+        break;
+      }
+
+      const missChance = stateFinisher.histogram.get(0) || 0;
+      if (missChance >= 1) {
+        expectedTicks = Infinity;
+        weaponOnlyExpectedTicks = Infinity;
+        break;
+      }
+
+      let weightedRemainingTicks = 0;
+      let weightedWeaponOnlyRemainingTicks = 0;
+      const optimalMemory = getFinisherMemory(state.reductions, continuous);
+      const weaponOnlyMemory = getSingleFinisherMemory(finisher.loadoutIndex, state.reductions, continuous);
+
+      for (const [damage, probability] of stateFinisher.histogram.entries()) {
+        if (damage <= 0 || probability === 0) {
+          continue;
+        }
+
+        const remainingHp = hp - damage;
+        weightedRemainingTicks += probability * getRemainingTicks(
+          remainingHp,
+          continuous,
+          stateFinisher.speed,
+          optimalMemory,
+        );
+        weightedWeaponOnlyRemainingTicks += probability * getRemainingTicks(
+          remainingHp,
+          continuous,
+          stateFinisher.speed,
+          weaponOnlyMemory,
+        );
+      }
+
+      expectedTicks += state.probability * (
+        (weightedRemainingTicks + stateFinisher.speed) / (1 - missChance)
+      );
+      weaponOnlyExpectedTicks += state.probability * (
+        (weightedWeaponOnlyRemainingTicks + stateFinisher.speed) / (1 - missChance)
       );
     }
+
     if (expectedTicks < bestTicks) {
       best = finisher;
       bestTicks = expectedTicks;
+      bestWeaponOnlyTicks = weaponOnlyExpectedTicks;
     }
   }
 
-  return { best, bestTicks };
+  return { best, bestTicks, bestWeaponOnlyTicks };
 };
 
 const getPostSpecSwapMode = (
   states: SpecState[],
   baseFinishers: FinishCandidate[],
+  getFinisherCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => FinishCandidate | null,
   getFinisherMemory: (reductions: DefenceReductions, continuous: boolean) => Float64Array,
   getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, continuous: boolean) => Float64Array,
   continuous: boolean,
@@ -389,14 +439,11 @@ const getPostSpecSwapMode = (
       probability: state.probability / hpProbability,
     }));
 
-    let expectedTicks = 0;
-    for (const state of weightedStates) {
-      expectedTicks += state.probability * getFinisherMemory(state.reductions, continuous)[hp];
-    }
-
-    const { best, bestTicks } = getDisplayFinisherAtHp(
+    const { best, bestTicks, bestWeaponOnlyTicks } = getBestNextFinisherAtHp(
       hp,
       weightedStates,
+      getFinisherCandidate,
+      getFinisherMemory,
       getSingleFinisherMemory,
       baseFinishers,
       continuous,
@@ -406,10 +453,10 @@ const getPostSpecSwapMode = (
       hitpoints: hp,
       loadoutIndex: best.loadoutIndex,
       loadoutName: best.name,
-      expectedTicks,
-      expectedSeconds: expectedTicks * SECONDS_PER_TICK,
-      weaponOnlyExpectedTicks: bestTicks,
-      weaponOnlyExpectedSeconds: bestTicks * SECONDS_PER_TICK,
+      expectedTicks: bestTicks,
+      expectedSeconds: bestTicks * SECONDS_PER_TICK,
+      weaponOnlyExpectedTicks: bestWeaponOnlyTicks,
+      weaponOnlyExpectedSeconds: bestWeaponOnlyTicks * SECONDS_PER_TICK,
     });
   }
 
@@ -623,6 +670,22 @@ export const computeSpecWeaponSwapGraph = (
 
   const finisherMemoryCache = new Map<string, Float64Array>();
   const singleFinisherMemoryCache = new Map<string, Float64Array>();
+  const finisherCandidateCache = new Map<string, FinishCandidate | null>();
+  const getFinisherCandidate = (
+    loadoutIndex: number,
+    hp: number,
+    reductions: DefenceReductions,
+  ): FinishCandidate | null => {
+    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}`;
+    if (!finisherCandidateCache.has(key)) {
+      const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
+      finisherCandidateCache.set(
+        key,
+        buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster, maxHp),
+      );
+    }
+    return finisherCandidateCache.get(key) || null;
+  };
   const getFinishers = (reductions: DefenceReductions): FinishCandidate[] => {
     const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
     return normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
@@ -671,6 +734,7 @@ export const computeSpecWeaponSwapGraph = (
     continuous: getPostSpecSwapMode(
       states,
       baseFinishers,
+      getFinisherCandidate,
       getFinisherMemory,
       getSingleFinisherMemory,
       true,
@@ -679,6 +743,7 @@ export const computeSpecWeaponSwapGraph = (
     discontinuous: getPostSpecSwapMode(
       states,
       baseFinishers,
+      getFinisherCandidate,
       getFinisherMemory,
       getSingleFinisherMemory,
       false,
@@ -735,6 +800,22 @@ export const computeSpecWeaponSwaps = (
 
   const finisherMemoryCache = new Map<string, Float64Array>();
   const singleFinisherMemoryCache = new Map<string, Float64Array>();
+  const finisherCandidateCache = new Map<string, FinishCandidate | null>();
+  const getFinisherCandidate = (
+    loadoutIndex: number,
+    hp: number,
+    reductions: DefenceReductions,
+  ): FinishCandidate | null => {
+    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}`;
+    if (!finisherCandidateCache.has(key)) {
+      const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
+      finisherCandidateCache.set(
+        key,
+        buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster, maxHp),
+      );
+    }
+    return finisherCandidateCache.get(key) || null;
+  };
   const getFinishers = (reductions: DefenceReductions): FinishCandidate[] => {
     const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
     return normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
@@ -794,6 +875,7 @@ export const computeSpecWeaponSwaps = (
         continuous: getPostSpecSwapMode(
           states,
           baseFinishers,
+          getFinisherCandidate,
           getFinisherMemory,
           getSingleFinisherMemory,
           true,
@@ -802,6 +884,7 @@ export const computeSpecWeaponSwaps = (
         discontinuous: getPostSpecSwapMode(
           states,
           baseFinishers,
+          getFinisherCandidate,
           getFinisherMemory,
           getSingleFinisherMemory,
           false,
