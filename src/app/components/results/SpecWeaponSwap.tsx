@@ -24,7 +24,6 @@ import { toJS } from 'mobx';
 import { useStore } from '@/state';
 import SectionAccordion from '@/app/components/generic/SectionAccordion';
 import NumberInput from '@/app/components/generic/NumberInput';
-import { computeSpecWeaponSwaps } from '@/lib/SpecWeaponSwap';
 import { WORKER_JSON_REPLACER, WORKER_JSON_REVIVER } from '@/utils';
 import type {
   SpecSwapMode,
@@ -38,6 +37,10 @@ import type {
   SpecSwapGraphWorkerRequest,
   SpecSwapGraphWorkerResponse,
 } from '@/worker/specSwapGraphWorker';
+import type {
+  SpecSwapResultsWorkerRequest,
+  SpecSwapResultsWorkerResponse,
+} from '@/worker/specSwapResultsWorker';
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 
 enum SwapMode {
@@ -438,13 +441,70 @@ const SpecWeaponSwap: React.FC = observer(() => {
   const [expandedResult, setExpandedResult] = useState<string | null>(null);
   const loadouts = toJS(store.loadouts);
   const monster = toJS(store.monster);
+  const loadoutsKey = JSON.stringify(loadouts);
+  const monsterKey = JSON.stringify(monster);
+  const loadoutsSnapshot = useMemo(() => JSON.parse(loadoutsKey) as Player[], [loadoutsKey]);
+  const monsterSnapshot = useMemo(() => JSON.parse(monsterKey) as Monster, [monsterKey]);
 
   const specLoadouts = loadouts.filter((loadout) => loadout.specSetup);
   const normalLoadouts = loadouts.filter((loadout) => !loadout.specSetup);
-  const results = useMemo(
-    () => (isOpen ? computeSpecWeaponSwaps(loadouts, monster, { startingEnergy, maxSpecs }) : []),
-    [isOpen, loadouts, monster, startingEnergy, maxSpecs],
-  );
+  const [results, setResults] = useState<SpecSwapResult[]>([]);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsError, setResultsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || specLoadouts.length === 0 || normalLoadouts.length === 0) {
+      setResults([]);
+      setResultsLoading(false);
+      setResultsError(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const worker = new Worker(new URL('../../../worker/specSwapResultsWorker.ts', import.meta.url));
+    setResults([]);
+    setResultsLoading(true);
+    setResultsError(null);
+
+    worker.onmessage = (evt: MessageEvent<string>) => {
+      if (!cancelled) {
+        const response = JSON.parse(evt.data, WORKER_JSON_REVIVER) as SpecSwapResultsWorkerResponse;
+        if (response.error) {
+          setResultsError(response.error);
+        } else {
+          setResults(response.payload || []);
+        }
+        setResultsLoading(false);
+      }
+      worker.terminate();
+    };
+    worker.onerror = (e: ErrorEvent) => {
+      if (!cancelled) {
+        setResultsError(e.message || 'Unable to calculate spec swaps.');
+        setResultsLoading(false);
+      }
+      worker.terminate();
+    };
+    worker.postMessage(JSON.stringify({
+      loadouts: loadoutsSnapshot,
+      monster: monsterSnapshot,
+      startingEnergy,
+      maxSpecs,
+    } satisfies SpecSwapResultsWorkerRequest, WORKER_JSON_REPLACER));
+
+    return () => {
+      cancelled = true;
+      worker.terminate();
+    };
+  }, [
+    isOpen,
+    loadoutsSnapshot,
+    monsterSnapshot,
+    maxSpecs,
+    normalLoadouts.length,
+    specLoadouts.length,
+    startingEnergy,
+  ]);
 
   return (
     <SectionAccordion
@@ -511,6 +571,21 @@ const SpecWeaponSwap: React.FC = observer(() => {
             />
           </div>
         </div>
+        {resultsLoading && (
+          <div className="mb-4 flex h-16 items-center justify-center border border-body-300 dark:border-dark-200 bg-body-100 dark:bg-dark-500 text-black dark:text-body-200">
+            Loading spec swap results...
+          </div>
+        )}
+        {resultsError && (
+          <div className={`${warningClassName} mb-4 border`}>
+            <IconAlertTriangle className="text-orange-200" />
+            <div>
+              Unable to calculate spec swaps:
+              {' '}
+              {resultsError}
+            </div>
+          </div>
+        )}
         {results.length > 0 && (
           <div className="overflow-x-auto text-black dark:text-body-200">
             <table className="w-full">
