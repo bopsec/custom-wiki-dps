@@ -77,7 +77,6 @@ interface FinishCandidate {
   name: string;
   speed: number;
   histogram: Map<number, number>;
-  memory: Float64Array;
 }
 
 type DefenceReductions = Monster['inputs']['defenceReductions'];
@@ -537,7 +536,6 @@ const buildFinishCandidate = (
   loadout: Player,
   loadoutIndex: number,
   monster: Monster,
-  maxHp: number,
 ): FinishCandidate | null => {
   const calc = new PlayerVsNPCCalc(loadout, monster, {
     detailedOutput: false,
@@ -553,7 +551,6 @@ const buildFinishCandidate = (
     name: loadout.name || `Loadout ${loadoutIndex + 1}`,
     speed: calc.getExpectedAttackSpeed(),
     histogram,
-    memory: new Float64Array(maxHp + 1),
   };
 };
 
@@ -653,7 +650,7 @@ export const computeSpecWeaponSwapGraph = (
     .filter(({ loadout }) => !loadout.specSetup);
 
   const baseFinishers = normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
-    const finisher = buildFinishCandidate(loadout, loadoutIndex, initialMonster, maxHp);
+    const finisher = buildFinishCandidate(loadout, loadoutIndex, initialMonster);
     return finisher ? [finisher] : [];
   });
 
@@ -689,7 +686,7 @@ export const computeSpecWeaponSwapGraph = (
       const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
       finisherCandidateCache.set(
         key,
-        buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster, maxHp),
+        buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster),
       );
     }
     return finisherCandidateCache.get(key) || null;
@@ -697,7 +694,7 @@ export const computeSpecWeaponSwapGraph = (
   const getFinishers = (reductions: DefenceReductions): FinishCandidate[] => {
     const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
     return normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
-      const finisher = buildFinishCandidate(loadout, loadoutIndex, stateMonster, maxHp);
+      const finisher = buildFinishCandidate(loadout, loadoutIndex, stateMonster);
       return finisher ? [finisher] : [];
     });
   };
@@ -716,7 +713,7 @@ export const computeSpecWeaponSwapGraph = (
     const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}`;
     if (!singleFinisherMemoryCache.has(key)) {
       const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
-      const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster, maxHp);
+      const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster);
       singleFinisherMemoryCache.set(
         key,
         finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1),
@@ -725,18 +722,21 @@ export const computeSpecWeaponSwapGraph = (
     return singleFinisherMemoryCache.get(key)!;
   };
 
-  const states = attacks.reduce(
-    (currentStates, attack, attackIndex) => trimStates(applyOutcomeAttack(
-      currentStates,
-      attack,
-      attackIndex,
-      overrides,
-      getAttackCandidate,
-    )),
-    makeInitialState(maxHp, initialReductions),
-  );
+  const includesDefenceReductionSpec = hasDefenceReductionSpec(attacks);
+  const states = includesDefenceReductionSpec
+    ? attacks.reduce(
+      (currentStates, attack, attackIndex) => trimStates(applyOutcomeAttack(
+        currentStates,
+        attack,
+        attackIndex,
+        overrides,
+        getAttackCandidate,
+      )),
+      makeInitialState(maxHp, initialReductions),
+    )
+    : makeInitialState(maxHp, initialReductions);
   const expectedHp = getExpectedHp(states);
-  const maxChartHp = hasDefenceReductionSpec(attacks) ? Math.max(1, Math.ceil(expectedHp)) : maxHp;
+  const maxChartHp = includesDefenceReductionSpec ? Math.max(1, Math.ceil(expectedHp)) : maxHp;
 
   return getPostSpecSwapMode(
     states,
@@ -772,7 +772,7 @@ export const computeSpecWeaponSwaps = (
   });
 
   const baseFinishers = normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
-    const finisher = buildFinishCandidate(loadout, loadoutIndex, initialMonster, maxHp);
+    const finisher = buildFinishCandidate(loadout, loadoutIndex, initialMonster);
     return finisher ? [finisher] : [];
   });
 
@@ -800,7 +800,7 @@ export const computeSpecWeaponSwaps = (
   const getFinishers = (reductions: DefenceReductions): FinishCandidate[] => {
     const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
     return normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
-      const finisher = buildFinishCandidate(loadout, loadoutIndex, stateMonster, maxHp);
+      const finisher = buildFinishCandidate(loadout, loadoutIndex, stateMonster);
       return finisher ? [finisher] : [];
     });
   };
@@ -819,7 +819,7 @@ export const computeSpecWeaponSwaps = (
     const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}`;
     if (!singleFinisherMemoryCache.has(key)) {
       const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
-      const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster, maxHp);
+      const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster);
       singleFinisherMemoryCache.set(
         key,
         finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1),
