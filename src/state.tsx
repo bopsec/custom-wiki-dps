@@ -9,7 +9,6 @@ import * as localforage from 'localforage';
 import merge from 'lodash.mergewith';
 import { toast } from 'react-toastify';
 import {
-  CalculatedLoadout,
   Calculator,
   IMPORT_VERSION,
   ImportableData,
@@ -55,8 +54,6 @@ import {
   Prayer,
 } from './enums/Prayer';
 import Potion from './enums/Potion';
-
-const EMPTY_CALC_LOADOUT = {} as CalculatedLoadout;
 
 const generateInitialEquipment = () => {
   const initialEquipment: PlayerEquipment = {
@@ -810,11 +807,8 @@ class GlobalState implements State {
       return;
     }
 
-    // clear existing loadout data
-    const calculatedLoadouts: CalculatedLoadout[] = [];
-    this.loadouts.forEach(() => calculatedLoadouts.push(EMPTY_CALC_LOADOUT));
-    this.calc.loadouts = calculatedLoadouts;
-    this.calc.weaponSwap = null;
+    // Keep the last completed results visible while a preference or input change is recalculated.
+    // This avoids the Results section appearing empty when the weapon-swap accordion is opened.
 
     const data: Extract<ComputeBasicRequest['data'], ComputeReverseRequest['data']> = {
       loadouts: toJS(this.loadouts),

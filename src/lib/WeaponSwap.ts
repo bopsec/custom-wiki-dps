@@ -220,18 +220,26 @@ export const computeWeaponSwap = (
     ? monster
     : scaleMonster(JSON.parse(JSON.stringify(monster)) as Monster);
 
-  const swapLoadouts = eligibleLoadouts.map(({ loadout, loadoutIndex }): SwapLoadout => {
-    const calc = getSwapCalc(loadout, scaledMonster);
-
-    return {
-      loadout,
-      loadoutIndex,
-      name: loadout.name || `Loadout ${loadoutIndex + 1}`,
-      calc,
-      speed: calc?.getExpectedAttackSpeed() || 0,
-      baseHistogram: histogramFromCalc(calc),
-    };
+  const swapLoadouts = eligibleLoadouts.flatMap(({ loadout, loadoutIndex }): SwapLoadout[] => {
+    try {
+      const calc = getSwapCalc(loadout, scaledMonster);
+      return [{
+        loadout,
+        loadoutIndex,
+        name: loadout.name || `Loadout ${loadoutIndex + 1}`,
+        calc,
+        speed: calc?.getExpectedAttackSpeed() || 0,
+        baseHistogram: histogramFromCalc(calc),
+      }];
+    } catch (e: unknown) {
+      console.warn(`Skipping loadout ${loadoutIndex + 1} during weapon swap calculation`, e);
+      return [];
+    }
   });
+
+  if (swapLoadouts.length < 2) {
+    return undefined;
+  }
 
   const currentHp = scaledMonster.skills.hp;
   const cappedHp = Math.min(currentHp, MAX_OPTIMIZED_HP);
