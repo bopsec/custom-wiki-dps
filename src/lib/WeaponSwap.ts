@@ -39,6 +39,8 @@ export interface WeaponSwapResult {
 }
 
 interface SwapLoadout {
+  loadout: Player;
+  loadoutIndex: number;
   name: string;
   calc: PlayerVsNPCCalc | null;
   speed: number;
@@ -60,14 +62,12 @@ const histogramFromCalc = (calc: PlayerVsNPCCalc | null): Map<number, number> =>
   return histogram;
 };
 
-const getSwapCalc = (loadout: Player, monster: Monster): PlayerVsNPCCalc | null => {
-  const calc = new PlayerVsNPCCalc(loadout, monster, {
+const getSwapCalc = (loadout: Player, monster: Monster): PlayerVsNPCCalc | null => (
+  new PlayerVsNPCCalc(loadout, monster, {
     detailedOutput: false,
     disableMonsterScaling: true,
-  });
-
-  return loadout.specSetup ? calc.getSpecCalc() : calc;
-};
+  })
+);
 
 const getHistogramAtHp = (
   loadout: Player,
@@ -119,7 +119,6 @@ const getRemainingTicks = (
 };
 
 const optimize = (
-  loadouts: Player[],
   monster: Monster,
   swapLoadouts: SwapLoadout[],
   cappedHp: number,
@@ -136,8 +135,8 @@ const optimize = (
     let bestIx = 0;
 
     for (const [ix, swapLoadout] of swapLoadouts.entries()) {
-      const hist = swapLoadout.calc?.distIsCurrentHpDependent(loadouts[ix], monster)
-        ? getHistogramAtHp(loadouts[ix], monster, hp)
+      const hist = swapLoadout.calc?.distIsCurrentHpDependent(swapLoadout.loadout, monster)
+        ? getHistogramAtHp(swapLoadout.loadout, monster, hp)
         : swapLoadout.baseHistogram;
       const missChance = hist.get(0) || 0;
 
@@ -178,7 +177,7 @@ const optimize = (
     memory[hp] = bestTicks;
     const point: WeaponSwapPoint = {
       hitpoints: hp,
-      loadoutIndex: bestIx,
+      loadoutIndex: swapLoadouts[bestIx].loadoutIndex,
       loadoutName: swapLoadouts[bestIx].name,
       expectedTicks: bestTicks,
       expectedSeconds: bestTicks * SECONDS_PER_TICK,
@@ -205,7 +204,11 @@ export const computeWeaponSwap = (
   monster: Monster,
   calcOpts: WorkerCalcOpts,
 ): WeaponSwapResult | undefined => {
-  if (loadouts.length < 2) {
+  const eligibleLoadouts = loadouts
+    .map((loadout, loadoutIndex) => ({ loadout, loadoutIndex }))
+    .filter(({ loadout }) => !loadout.specSetup);
+
+  if (eligibleLoadouts.length < 2) {
     return undefined;
   }
 
@@ -213,11 +216,13 @@ export const computeWeaponSwap = (
     ? monster
     : scaleMonster(JSON.parse(JSON.stringify(monster)) as Monster);
 
-  const swapLoadouts = loadouts.map((loadout, i): SwapLoadout => {
+  const swapLoadouts = eligibleLoadouts.map(({ loadout, loadoutIndex }): SwapLoadout => {
     const calc = getSwapCalc(loadout, scaledMonster);
 
     return {
-      name: loadout.name || `Loadout ${i + 1}`,
+      loadout,
+      loadoutIndex,
+      name: loadout.name || `Loadout ${loadoutIndex + 1}`,
       calc,
       speed: calc?.getExpectedAttackSpeed() || 0,
       baseHistogram: histogramFromCalc(calc),
@@ -235,7 +240,7 @@ export const computeWeaponSwap = (
     currentHp,
     cappedHp,
     truncated: currentHp > cappedHp,
-    continuous: optimize(loadouts, scaledMonster, swapLoadouts, cappedHp, true),
-    discontinuous: optimize(loadouts, scaledMonster, swapLoadouts, cappedHp, false),
+    continuous: optimize(scaledMonster, swapLoadouts, cappedHp, true),
+    discontinuous: optimize(scaledMonster, swapLoadouts, cappedHp, false),
   };
 };
