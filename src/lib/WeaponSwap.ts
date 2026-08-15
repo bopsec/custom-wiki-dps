@@ -1,4 +1,3 @@
-import { max } from 'd3-array';
 import PlayerVsNPCCalc from '@/lib/PlayerVsNPCCalc';
 import { SECONDS_PER_TICK } from '@/lib/constants';
 import type { Monster } from '@/types/Monster';
@@ -234,12 +233,6 @@ export const computeWeaponSwap = (
     };
   });
 
-  const damagingLoadouts = swapLoadouts.filter((loadout) => (max(loadout.baseHistogram.keys()) || 0) > 0);
-
-  if (damagingLoadouts.length < 2) {
-    return undefined;
-  }
-
   const currentHp = scaledMonster.skills.hp;
   const cappedHp = Math.min(currentHp, MAX_OPTIMIZED_HP);
 
@@ -247,7 +240,7 @@ export const computeWeaponSwap = (
     currentHp,
     cappedHp,
     truncated: currentHp > cappedHp,
-    continuous: optimize(scaledMonster, damagingLoadouts, cappedHp, true),
-    discontinuous: optimize(scaledMonster, damagingLoadouts, cappedHp, false),
+    continuous: optimize(scaledMonster, swapLoadouts, cappedHp, true),
+    discontinuous: optimize(scaledMonster, swapLoadouts, cappedHp, false),
   };
 };
