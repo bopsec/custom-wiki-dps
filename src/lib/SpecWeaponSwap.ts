@@ -88,7 +88,11 @@ interface SpecState {
 }
 
 const MAX_RESULTS = 10;
-const MAX_STATE_COUNT = 50_000;
+// State trimming is already an approximation. Keep it bounded so defence-reduction
+// specs cannot retain an unbounded number of HP/reduction combinations.
+const MAX_STATE_COUNT = 4_096;
+const MAX_MEMORY_CACHE_ENTRIES = 64;
+const MAX_CANDIDATE_CACHE_ENTRIES = 2_048;
 const DEFENCE_REDUCTION_SPEC_WEAPONS = [
   'Elder maul',
   'Dragon warhammer',
@@ -251,6 +255,42 @@ const buildFinisherMemory = (
   }
 
   return memory;
+};
+
+const getCachedMemory = (
+  cache: Map<string, Float64Array>,
+  key: string,
+  build: () => Float64Array,
+): Float64Array => {
+  const existing = cache.get(key);
+  if (existing) {
+    // Refresh the entry so frequently used defence states remain cached.
+    cache.delete(key);
+    cache.set(key, existing);
+    return existing;
+  }
+
+  const memory = build();
+  cache.set(key, memory);
+  while (cache.size > MAX_MEMORY_CACHE_ENTRIES) {
+    const oldestKey = cache.keys().next().value as string | undefined;
+    if (oldestKey === undefined) {
+      break;
+    }
+    cache.delete(oldestKey);
+  }
+  return memory;
+};
+
+const setBoundedCache = <T>(cache: Map<string, T>, key: string, value: T) => {
+  cache.set(key, value);
+  while (cache.size > MAX_CANDIDATE_CACHE_ENTRIES) {
+    const oldestKey = cache.keys().next().value as string | undefined;
+    if (oldestKey === undefined) {
+      break;
+    }
+    cache.delete(oldestKey);
+  }
 };
 
 const buildRanges = (points: SpecSwapPoint[]): SpecSwapRange[] => {
@@ -477,9 +517,17 @@ const trimStates = (states: SpecState[]): SpecState[] => {
     return states;
   }
 
-  return states
+  const trimmed = states
     .sort((a, b) => b.probability - a.probability)
     .slice(0, MAX_STATE_COUNT);
+  const probability = trimmed.reduce((sum, state) => sum + state.probability, 0);
+  if (probability === 0) {
+    return trimmed;
+  }
+  return trimmed.map((state) => ({
+    ...state,
+    probability: state.probability / probability,
+  }));
 };
 
 const getAveragePositiveDamage = (histogram: Map<number, number>): number => {
@@ -668,7 +716,7 @@ export const computeSpecWeaponSwapGraph = (
     if (!attackCache.has(key)) {
       const loadout = loadouts[loadoutIndex];
       const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
-      attackCache.set(key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
+      setBoundedCache(attackCache, key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
     }
     return attackCache.get(key) || null;
   };
@@ -684,7 +732,8 @@ export const computeSpecWeaponSwapGraph = (
     const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}`;
     if (!finisherCandidateCache.has(key)) {
       const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
-      finisherCandidateCache.set(
+      setBoundedCache(
+        finisherCandidateCache,
         key,
         buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster),
       );
@@ -700,10 +749,11 @@ export const computeSpecWeaponSwapGraph = (
   };
   const getFinisherMemory = (reductions: DefenceReductions, continuous: boolean): Float64Array => {
     const key = `${continuous ? 'c' : 'd'}|${reductionKey(reductions)}`;
-    if (!finisherMemoryCache.has(key)) {
-      finisherMemoryCache.set(key, buildFinisherMemory(getFinishers(reductions), maxHp, continuous));
-    }
-    return finisherMemoryCache.get(key)!;
+    return getCachedMemory(
+      finisherMemoryCache,
+      key,
+      () => buildFinisherMemory(getFinishers(reductions), maxHp, continuous),
+    );
   };
   const getSingleFinisherMemory = (
     loadoutIndex: number,
@@ -711,15 +761,11 @@ export const computeSpecWeaponSwapGraph = (
     continuous: boolean,
   ): Float64Array => {
     const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}`;
-    if (!singleFinisherMemoryCache.has(key)) {
+    return getCachedMemory(singleFinisherMemoryCache, key, () => {
       const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
       const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster);
-      singleFinisherMemoryCache.set(
-        key,
-        finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1),
-      );
-    }
-    return singleFinisherMemoryCache.get(key)!;
+      return finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1);
+    });
   };
 
   const includesDefenceReductionSpec = hasDefenceReductionSpec(attacks);
@@ -790,7 +836,7 @@ export const computeSpecWeaponSwaps = (
     if (!attackCache.has(key)) {
       const loadout = loadouts[loadoutIndex];
       const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
-      attackCache.set(key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
+      setBoundedCache(attackCache, key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
     }
     return attackCache.get(key) || null;
   };
@@ -806,10 +852,11 @@ export const computeSpecWeaponSwaps = (
   };
   const getFinisherMemory = (reductions: DefenceReductions, continuous: boolean): Float64Array => {
     const key = `${continuous ? 'c' : 'd'}|${reductionKey(reductions)}`;
-    if (!finisherMemoryCache.has(key)) {
-      finisherMemoryCache.set(key, buildFinisherMemory(getFinishers(reductions), maxHp, continuous));
-    }
-    return finisherMemoryCache.get(key)!;
+    return getCachedMemory(
+      finisherMemoryCache,
+      key,
+      () => buildFinisherMemory(getFinishers(reductions), maxHp, continuous),
+    );
   };
   const getSingleFinisherMemory = (
     loadoutIndex: number,
@@ -817,15 +864,11 @@ export const computeSpecWeaponSwaps = (
     continuous: boolean,
   ): Float64Array => {
     const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}`;
-    if (!singleFinisherMemoryCache.has(key)) {
+    return getCachedMemory(singleFinisherMemoryCache, key, () => {
       const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
       const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster);
-      singleFinisherMemoryCache.set(
-        key,
-        finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1),
-      );
-    }
-    return singleFinisherMemoryCache.get(key)!;
+      return finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1);
+    });
   };
 
   const results: SpecSwapResult[] = [];
