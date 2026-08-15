@@ -4,7 +4,7 @@ This fork is a static Next.js export. The build output is the `out` directory, s
 
 ## Recommended Setup
 
-1. Push `local-dps-calc` to `bopsec/osrs-dps-calc`.
+1. Push `local-dps-calc` to `bopsec/custom-wiki-dps`.
 2. In Cloudflare, create a Pages project from the GitHub repository.
 3. Set the production branch to `local-dps-calc`.
 4. Use the `Next.js (Static HTML Export)` preset:
@@ -12,7 +12,7 @@ This fork is a static Next.js export. The build output is the `out` directory, s
    - Build output directory: `out`
 5. Add environment variables:
    - `NEXT_PUBLIC_BASE_URL=https://dps.bopsec.com`
-   - `NEXT_PUBLIC_SOURCE_URL=https://github.com/bopsec/osrs-dps-calc`
+   - `NEXT_PUBLIC_SOURCE_URL=https://github.com/bopsec/custom-wiki-dps`
    - Optional: `NEXT_PUBLIC_CDN_BASE=<your hosted CDN path>`
 6. Add the custom domain `dps.bopsec.com` in the Cloudflare Pages project.
 

@@ -2,8 +2,6 @@ name: Regenerate JSON
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 13 * * 3'
 
 concurrency:
   group: ${{ github.workflow }}
@@ -14,6 +12,7 @@ env:
 
 jobs:
   run:
+    if: github.repository == 'weirdgloop/osrs-dps-calc'
     runs-on: ubuntu-latest
 
     steps:
