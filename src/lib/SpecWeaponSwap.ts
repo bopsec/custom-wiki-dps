@@ -911,14 +911,7 @@ export const computeSpecWeaponSwaps = (
       if (candidate.specCost > remainingEnergy) {
         continue;
       }
-      const nextAttacks = [...attacks, candidate];
-      const includesDefenceReductionSpec = hasDefenceReductionSpec(nextAttacks);
-      const nextStates = trimStates(applyAttack(
-        states,
-        candidate,
-        getAttackCandidate,
-        !includesDefenceReductionSpec || DEFENCE_REDUCTION_SPEC_WEAPONS.includes(candidate.weaponName),
-      ));
+      const nextStates = trimStates(applyAttack(states, candidate, getAttackCandidate));
       if (nextStates.length === 0) {
         continue;
       }
@@ -926,14 +919,14 @@ export const computeSpecWeaponSwaps = (
         remainingEnergy - candidate.specCost,
         remainingSpecs - 1,
         nextStates,
-        nextAttacks,
+        [...attacks, candidate],
         specTicks + candidate.speed,
       );
     }
   };
 
   dfs(
-    Math.max(0, Math.min(100, options.startingEnergy)),
+    Math.max(0, Math.min(1000, options.startingEnergy)),
     Math.max(0, options.maxSpecs),
     makeInitialState(maxHp, initialReductions),
     [],
