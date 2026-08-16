@@ -315,6 +315,7 @@ const applyAttack = (
   states: SpecState[],
   attack: SpecSwapAttack,
   getAttackCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => AttackCandidate | null,
+  dealDamage = true,
 ): SpecState[] => {
   const next = new Map<string, SpecState>();
 
@@ -324,7 +325,8 @@ const applyAttack = (
       continue;
     }
 
-    for (const [damage, damageProbability] of attackState.histogram.entries()) {
+    for (const [rolledDamage, damageProbability] of attackState.histogram.entries()) {
+      const damage = dealDamage ? rolledDamage : 0;
       const remainingHp = Math.max(state.hp - damage, 0);
       const reductions = applySpecDefenceReduction(state.reductions, attack.weaponName, damage);
       const key = stateKey(remainingHp, reductions);
@@ -639,10 +641,11 @@ const applyOutcomeAttack = (
   attackIndex: number,
   overrides: SpecSwapOutcomeOverride[],
   getAttackCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => AttackCandidate | null,
+  dealDamage = true,
 ): SpecState[] => {
   const override = getOutcomeOverride(overrides, attackIndex);
   if (override.mode === 'average' && !DAMAGE_REDUCTION_SPEC_WEAPONS.includes(attack.weaponName)) {
-    return applyAttack(states, attack, getAttackCandidate);
+    return applyAttack(states, attack, getAttackCandidate, dealDamage);
   }
 
   const next = new Map<string, SpecState>();
@@ -653,6 +656,9 @@ const applyOutcomeAttack = (
     }
 
     const damage = (() => {
+      if (!dealDamage) {
+        return 0;
+      }
       if (override.mode === 'miss') {
         return 0;
       }
@@ -777,6 +783,7 @@ export const computeSpecWeaponSwapGraph = (
         attackIndex,
         overrides,
         getAttackCandidate,
+        !includesDefenceReductionSpec || DEFENCE_REDUCTION_SPEC_WEAPONS.includes(attack.weaponName),
       )),
       makeInitialState(maxHp, initialReductions),
     )
@@ -904,7 +911,14 @@ export const computeSpecWeaponSwaps = (
       if (candidate.specCost > remainingEnergy) {
         continue;
       }
-      const nextStates = trimStates(applyAttack(states, candidate, getAttackCandidate));
+      const nextAttacks = [...attacks, candidate];
+      const includesDefenceReductionSpec = hasDefenceReductionSpec(nextAttacks);
+      const nextStates = trimStates(applyAttack(
+        states,
+        candidate,
+        getAttackCandidate,
+        !includesDefenceReductionSpec || DEFENCE_REDUCTION_SPEC_WEAPONS.includes(candidate.weaponName),
+      ));
       if (nextStates.length === 0) {
         continue;
       }
@@ -912,7 +926,7 @@ export const computeSpecWeaponSwaps = (
         remainingEnergy - candidate.specCost,
         remainingSpecs - 1,
         nextStates,
-        [...attacks, candidate],
+        nextAttacks,
         specTicks + candidate.speed,
       );
     }

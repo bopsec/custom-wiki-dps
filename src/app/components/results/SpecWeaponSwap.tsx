@@ -552,7 +552,7 @@ const SpecWeaponSwap: React.FC = observer(() => {
               aria-label="Starting spec energy"
               className="form-control w-20"
               min={0}
-              max={100}
+              max={1000}
               value={startingEnergy}
               onChange={(value) => setStartingEnergy(value)}
             />
