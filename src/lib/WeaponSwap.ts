@@ -47,7 +47,7 @@ interface SwapLoadout {
   hpHistograms: Map<number, Map<number, number>>;
 }
 
-const MAX_OPTIMIZED_HP = 400;
+const MAX_OPTIMIZED_HP = 600;
 
 const histogramFromCalc = (calc: PlayerVsNPCCalc | null): Map<number, number> => {
   const histogram = new Map<number, number>();
