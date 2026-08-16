@@ -60,6 +60,7 @@ export interface SpecSwapResult {
   finisherName: string;
   finisherSeconds: number;
   adaptiveFollowUps?: SpecSwapAdaptiveRange[];
+  adaptive?: boolean;
 }
 
 export interface SpecSwapAdaptiveRange {
@@ -1007,25 +1008,43 @@ export const computeSpecWeaponSwaps = (
     0,
   );
 
-  return results
+  const rankedResults = results
     .filter((result) => result.attacks.length > 0)
     .sort((a, b) => a.expectedSeconds - b.expectedSeconds)
-    .slice(0, MAX_RESULTS)
-    .map((result) => {
-      const energyAfterFirst = result.remainingEnergy + result.attacks
-        .slice(1)
-        .reduce((energy, attack) => energy + attack.specCost, 0);
-      return {
-        ...result,
-        adaptiveFollowUps: buildAdaptiveFollowUps(
-          result.attacks[0],
-          energyAfterFirst,
-          specCandidates,
-          maxHp,
-          initialReductions,
-          getAttackCandidate,
-          getFinisherMemory,
-        ),
-      };
-    });
+    .slice(0, MAX_RESULTS);
+  const adaptiveCandidates = rankedResults.map((result) => {
+    const firstAttack = result.attacks[0];
+    if (!DEFENCE_REDUCTION_SPEC_WEAPONS.includes(firstAttack.weaponName)) {
+      return { result, ranges: [] as SpecSwapAdaptiveRange[] };
+    }
+    const energyAfterFirst = result.remainingEnergy + result.attacks
+      .slice(1)
+      .reduce((energy, attack) => energy + attack.specCost, 0);
+    return {
+      result,
+      ranges: buildAdaptiveFollowUps(
+        firstAttack,
+        energyAfterFirst,
+        specCandidates,
+        maxHp,
+        initialReductions,
+        getAttackCandidate,
+        getFinisherMemory,
+      ),
+    };
+  });
+  const bestAdaptive = adaptiveCandidates
+    .filter(({ ranges }) => ranges.length > 1)
+    .sort((a, b) => a.result.expectedSeconds - b.result.expectedSeconds)[0];
+
+  return rankedResults.map((result) => {
+    if (!bestAdaptive || bestAdaptive.result !== result) {
+      return result;
+    }
+    return {
+      ...result,
+      adaptive: true,
+      adaptiveFollowUps: bestAdaptive.ranges,
+    };
+  });
 };

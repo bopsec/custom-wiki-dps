@@ -638,7 +638,7 @@ const SpecWeaponSwap: React.FC = observer(() => {
                         </td>
                         <td className="px-4 py-1.5 border-r">
                           <div className="flex flex-col gap-1">
-                            {result.attacks.map((attack, attackIx) => (
+                            {result.attacks.slice(0, result.adaptive ? 1 : undefined).map((attack, attackIx) => (
                               // eslint-disable-next-line react/no-array-index-key
                               <span key={`${attackIx}-${attack.loadoutName}-${attack.weaponName}`}>
                                 {attackIx + 1}
@@ -656,6 +656,15 @@ const SpecWeaponSwap: React.FC = observer(() => {
                                 </span>
                               </span>
                             ))}
+                            {result.adaptive && (
+                              <span className="text-xs font-bold text-orange-700 dark:text-orange-300">
+                                +
+                                {' '}
+                                {[...new Set(result.adaptiveFollowUps?.map((range) => range.loadoutName) || [])].join(' / ')}
+                                {' '}
+                                (Adaptive)
+                              </span>
+                            )}
                             {result.adaptiveFollowUps && result.adaptiveFollowUps.length > 0 && (
                               <div className="mt-1 text-xs text-orange-700 dark:text-orange-300">
                                 Adaptive next spec after
