@@ -96,11 +96,15 @@ const applyDefenceReductions = (m: Monster): Monster => {
     });
   }
 
-  for (let i = 0; i < reductions.elderMaul; i++) {
-    m = newSkills(m, {
-      def: m.skills.def - Math.trunc(m.skills.def * 35 / 100),
-    });
-  }
+  const applyElderMaul = (monster: Monster): Monster => newSkills(monster, {
+    def: monster.skills.def - Math.trunc(monster.skills.def * 35 / 100),
+  });
+  const applyElderMauls = (monster: Monster, count: number): Monster => {
+    for (let i = 0; i < count; i++) {
+      monster = applyElderMaul(monster);
+    }
+    return monster;
+  };
   for (let i = 0; i < reductions.dwh; i++) {
     m = newSkills(m, {
       def: m.skills.def - Math.trunc(m.skills.def * 3 / 10),
@@ -133,11 +137,14 @@ const applyDefenceReductions = (m: Monster): Monster => {
     });
   }
 
-  let bgsDmg = reductions.bgs;
-  if (bgsDmg > 0) {
-    const applyBgsDmg = (monster: Monster, k: keyof Monster['skills']): Monster => {
-      const startLevel = monster.skills[k];
-      const newMonster = newSkills(monster, { [k]: startLevel - bgsDmg });
+  const applyBgsDmg = (monster: Monster, damage: number): Monster => {
+    let bgsDmg = damage;
+    if (bgsDmg <= 0) {
+      return monster;
+    }
+    const applyBgsDmgToSkill = (current: Monster, k: keyof Monster['skills']): Monster => {
+      const startLevel = current.skills[k];
+      const newMonster = newSkills(current, { [k]: startLevel - bgsDmg });
       if (newMonster.skills[k] > 0) {
         // if a skill fails to drain to 0, even if because of a drain floor, the bgs does not propagate further
         bgsDmg = 0;
@@ -148,11 +155,24 @@ const applyDefenceReductions = (m: Monster): Monster => {
     };
 
     // order matters here
-    m = applyBgsDmg(m, 'def');
-    m = applyBgsDmg(m, 'str');
-    m = applyBgsDmg(m, 'atk');
-    m = applyBgsDmg(m, 'magic');
-    m = applyBgsDmg(m, 'ranged');
+    monster = applyBgsDmgToSkill(monster, 'def');
+    monster = applyBgsDmgToSkill(monster, 'str');
+    monster = applyBgsDmgToSkill(monster, 'atk');
+    monster = applyBgsDmgToSkill(monster, 'magic');
+    monster = applyBgsDmgToSkill(monster, 'ranged');
+    return monster;
+  };
+
+  const orderedReductions = m.inputs.specReductionOrder;
+  if (orderedReductions && orderedReductions.length > 0) {
+    orderedReductions.forEach((reduction) => {
+      m = reduction.type === 'elderMaul'
+        ? applyElderMaul(m)
+        : applyBgsDmg(m, reduction.damage || 0);
+    });
+  } else {
+    m = applyElderMauls(m, reductions.elderMaul);
+    m = applyBgsDmg(m, reductions.bgs);
   }
 
   if (reductions.ayak > 0 && m.defensive.magic > 0) {

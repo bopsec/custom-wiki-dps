@@ -116,6 +116,10 @@ export interface Monster {
       seercull: number;
       ayak: number;
     };
+    specReductionOrder?: {
+      type: 'elderMaul' | 'bgs';
+      damage?: number;
+    }[];
 
     demonbaneVulnerability?: number;
 

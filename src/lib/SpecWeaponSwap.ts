@@ -88,10 +88,12 @@ interface FinishCandidate {
 }
 
 type DefenceReductions = Monster['inputs']['defenceReductions'];
+type SpecReductionOrder = NonNullable<Monster['inputs']['specReductionOrder']>;
 
 interface SpecState {
   hp: number;
   reductions: DefenceReductions;
+  reductionOrder: SpecReductionOrder;
   probability: number;
 }
 
@@ -143,20 +145,33 @@ const reductionKey = (reductions: DefenceReductions): string => [
   reductions.ayak,
 ].join(':');
 
-const stateKey = (hp: number, reductions: DefenceReductions): string => `${hp}|${reductionKey(reductions)}`;
+const reductionOrderKey = (order: SpecReductionOrder): string => order
+  .map(({ type, damage }) => `${type}:${damage || 0}`)
+  .join(',');
+
+const stateKey = (hp: number, reductions: DefenceReductions, order: SpecReductionOrder): string => (
+  `${hp}|${reductionKey(reductions)}|${reductionOrderKey(order)}`
+);
 
 const cloneReductions = (reductions: DefenceReductions): DefenceReductions => ({ ...reductions });
+
+const initialReductionOrder = (reductions: DefenceReductions): SpecReductionOrder => [
+  ...Array.from({ length: reductions.elderMaul }, () => ({ type: 'elderMaul' as const })),
+  ...(reductions.bgs > 0 ? [{ type: 'bgs' as const, damage: reductions.bgs }] : []),
+];
 
 const withDefenceReductions = (
   baseMonster: Monster,
   hp: number,
   reductions: DefenceReductions,
+  reductionOrder: SpecReductionOrder = [],
 ): Monster => applyDefenceReductions(scaleMonsterHpOnly({
   ...baseMonster,
   inputs: {
     ...baseMonster.inputs,
     monsterCurrentHp: hp,
     defenceReductions: reductions,
+    specReductionOrder: reductionOrder,
   },
 }));
 
@@ -164,16 +179,19 @@ const applySpecDefenceReduction = (
   reductions: DefenceReductions,
   weaponName: string,
   damage: number,
-): DefenceReductions => {
+  reductionOrder: SpecReductionOrder,
+): { reductions: DefenceReductions, reductionOrder: SpecReductionOrder } => {
   if (damage <= 0) {
-    return reductions;
+    return { reductions, reductionOrder };
   }
 
   const next = cloneReductions(reductions);
+  const nextOrder = [...reductionOrder];
 
   switch (weaponName) {
     case 'Elder maul':
       next.elderMaul += 1;
+      nextOrder.push({ type: 'elderMaul' });
       break;
     case 'Dragon warhammer':
       next.dwh += 1;
@@ -186,6 +204,7 @@ const applySpecDefenceReduction = (
       break;
     case 'Bandos godsword':
       next.bgs += damage;
+      nextOrder.push({ type: 'bgs', damage });
       break;
     case 'Tonalztics of ralos':
       next.tonalztic += 1;
@@ -201,7 +220,7 @@ const applySpecDefenceReduction = (
       break;
   }
 
-  return next;
+  return { reductions: next, reductionOrder: nextOrder };
 };
 
 const hasDefenceReductionSpec = (attacks: SpecSwapAttack[]): boolean => (
@@ -322,13 +341,23 @@ const buildRanges = (points: SpecSwapPoint[]): SpecSwapRange[] => {
 const applyAttack = (
   states: SpecState[],
   attack: SpecSwapAttack,
-  getAttackCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => AttackCandidate | null,
+  getAttackCandidate: (
+    loadoutIndex: number,
+    hp: number,
+    reductions: DefenceReductions,
+    reductionOrder: SpecReductionOrder,
+  ) => AttackCandidate | null,
   dealDamage = true,
 ): SpecState[] => {
   const next = new Map<string, SpecState>();
 
   for (const state of states) {
-    const attackState = getAttackCandidate(attack.loadoutIndex, state.hp, state.reductions);
+    const attackState = getAttackCandidate(
+      attack.loadoutIndex,
+      state.hp,
+      state.reductions,
+      state.reductionOrder,
+    );
     if (!attackState) {
       continue;
     }
@@ -336,8 +365,13 @@ const applyAttack = (
     for (const [rolledDamage, damageProbability] of attackState.histogram.entries()) {
       const damage = dealDamage ? rolledDamage : 0;
       const remainingHp = Math.max(state.hp - damage, 0);
-      const reductions = applySpecDefenceReduction(state.reductions, attack.weaponName, damage);
-      const key = stateKey(remainingHp, reductions);
+      const reductionState = applySpecDefenceReduction(
+        state.reductions,
+        attack.weaponName,
+        damage,
+        state.reductionOrder,
+      );
+      const key = stateKey(remainingHp, reductionState.reductions, reductionState.reductionOrder);
       const probability = state.probability * damageProbability;
       const existing = next.get(key);
       if (existing) {
@@ -345,7 +379,8 @@ const applyAttack = (
       } else {
         next.set(key, {
           hp: remainingHp,
-          reductions,
+          reductions: reductionState.reductions,
+          reductionOrder: reductionState.reductionOrder,
           probability,
         });
       }
@@ -357,19 +392,19 @@ const applyAttack = (
 
 const expectedRemainingTicks = (
   states: SpecState[],
-  getFinisherMemory: (reductions: DefenceReductions, continuous: boolean) => Float64Array,
+  getFinisherMemory: (reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean) => Float64Array,
   continuous: boolean,
 ) => {
   let expected = 0;
   for (const state of states) {
-    expected += state.probability * getFinisherMemory(state.reductions, continuous)[state.hp];
+    expected += state.probability * getFinisherMemory(state.reductions, state.reductionOrder, continuous)[state.hp];
   }
   return expected;
 };
 
 const getDisplayFinisher = (
   states: SpecState[],
-  getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, continuous: boolean) => Float64Array,
+  getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean) => Float64Array,
   baseFinishers: FinishCandidate[],
   continuous: boolean,
 ) => {
@@ -380,7 +415,7 @@ const getDisplayFinisher = (
     let expectedTicks = 0;
     for (const state of states) {
       expectedTicks += (
-        state.probability * getSingleFinisherMemory(finisher.loadoutIndex, state.reductions, continuous)[state.hp]
+        state.probability * getSingleFinisherMemory(finisher.loadoutIndex, state.reductions, state.reductionOrder, continuous)[state.hp]
       );
     }
     if (expectedTicks < bestTicks) {
@@ -395,9 +430,9 @@ const getDisplayFinisher = (
 const getBestNextFinisherAtHp = (
   hp: number,
   states: SpecState[],
-  getFinisherCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => FinishCandidate | null,
-  getFinisherMemory: (reductions: DefenceReductions, continuous: boolean) => Float64Array,
-  getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, continuous: boolean) => Float64Array,
+  getFinisherCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions, reductionOrder: SpecReductionOrder) => FinishCandidate | null,
+  getFinisherMemory: (reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean) => Float64Array,
+  getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean) => Float64Array,
   baseFinishers: FinishCandidate[],
   continuous: boolean,
 ) => {
@@ -410,7 +445,7 @@ const getBestNextFinisherAtHp = (
     let weaponOnlyExpectedTicks = 0;
 
     for (const state of states) {
-      const stateFinisher = getFinisherCandidate(finisher.loadoutIndex, hp, state.reductions);
+      const stateFinisher = getFinisherCandidate(finisher.loadoutIndex, hp, state.reductions, state.reductionOrder);
       if (!stateFinisher) {
         expectedTicks = Infinity;
         weaponOnlyExpectedTicks = Infinity;
@@ -426,8 +461,8 @@ const getBestNextFinisherAtHp = (
 
       let weightedRemainingTicks = 0;
       let weightedWeaponOnlyRemainingTicks = 0;
-      const optimalMemory = getFinisherMemory(state.reductions, continuous);
-      const weaponOnlyMemory = getSingleFinisherMemory(finisher.loadoutIndex, state.reductions, continuous);
+      const optimalMemory = getFinisherMemory(state.reductions, state.reductionOrder, continuous);
+      const weaponOnlyMemory = getSingleFinisherMemory(finisher.loadoutIndex, state.reductions, state.reductionOrder, continuous);
 
       for (const [damage, probability] of stateFinisher.histogram.entries()) {
         if (damage <= 0 || probability === 0) {
@@ -470,9 +505,9 @@ const getBestNextFinisherAtHp = (
 const getPostSpecSwapMode = (
   states: SpecState[],
   baseFinishers: FinishCandidate[],
-  getFinisherCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => FinishCandidate | null,
-  getFinisherMemory: (reductions: DefenceReductions, continuous: boolean) => Float64Array,
-  getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, continuous: boolean) => Float64Array,
+  getFinisherCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions, reductionOrder: SpecReductionOrder) => FinishCandidate | null,
+  getFinisherMemory: (reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean) => Float64Array,
+  getSingleFinisherMemory: (loadoutIndex: number, reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean) => Float64Array,
   continuous: boolean,
   maxChartHp: number,
 ): SpecSwapMode => {
@@ -626,10 +661,17 @@ const buildAdaptiveFollowUps = (
     loadoutIndex: number,
     hp: number,
     reductions: DefenceReductions,
+    reductionOrder: SpecReductionOrder,
   ) => AttackCandidate | null,
-  getFinisherMemory: (reductions: DefenceReductions, continuous: boolean) => Float64Array,
+  getFinisherMemory: (reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean) => Float64Array,
 ): SpecSwapAdaptiveRange[] => {
-  const firstCandidate = getAttackCandidate(firstAttack.loadoutIndex, maxHp, initialReductions);
+  const firstReductionOrder = initialReductionOrder(initialReductions);
+  const firstCandidate = getAttackCandidate(
+    firstAttack.loadoutIndex,
+    maxHp,
+    initialReductions,
+    firstReductionOrder,
+  );
   if (!firstCandidate) {
     return [];
   }
@@ -641,9 +683,16 @@ const buildAdaptiveFollowUps = (
 
   const ranges: SpecSwapAdaptiveRange[] = [];
   for (const damage of [...firstCandidate.histogram.keys()].sort((a, b) => a - b)) {
+    const firstReductionState = applySpecDefenceReduction(
+      initialReductions,
+      firstAttack.weaponName,
+      damage,
+      firstReductionOrder,
+    );
     const firstState: SpecState = {
       hp: Math.max(maxHp - damage, 0),
-      reductions: applySpecDefenceReduction(initialReductions, firstAttack.weaponName, damage),
+      reductions: firstReductionState.reductions,
+      reductionOrder: firstReductionState.reductionOrder,
       probability: 1,
     };
     let best: AttackCandidate | null = null;
@@ -688,12 +737,14 @@ const buildBaseMonster = (monster: Monster): Monster => scaleMonster({
   inputs: {
     ...monster.inputs,
     defenceReductions: EMPTY_REDUCTIONS,
+    specReductionOrder: undefined,
   },
 });
 
 const makeInitialState = (maxHp: number, reductions: DefenceReductions): SpecState[] => [{
   hp: maxHp,
   reductions: cloneReductions(reductions),
+  reductionOrder: initialReductionOrder(reductions),
   probability: 1,
 }];
 
@@ -715,7 +766,12 @@ const applyOutcomeAttack = (
   attack: SpecSwapAttack,
   attackIndex: number,
   overrides: SpecSwapOutcomeOverride[],
-  getAttackCandidate: (loadoutIndex: number, hp: number, reductions: DefenceReductions) => AttackCandidate | null,
+  getAttackCandidate: (
+    loadoutIndex: number,
+    hp: number,
+    reductions: DefenceReductions,
+    reductionOrder: SpecReductionOrder,
+  ) => AttackCandidate | null,
   dealDamage = true,
 ): SpecState[] => {
   const override = getOutcomeOverride(overrides, attackIndex);
@@ -725,7 +781,12 @@ const applyOutcomeAttack = (
 
   const next = new Map<string, SpecState>();
   for (const state of states) {
-    const attackState = getAttackCandidate(attack.loadoutIndex, state.hp, state.reductions);
+    const attackState = getAttackCandidate(
+      attack.loadoutIndex,
+      state.hp,
+      state.reductions,
+      state.reductionOrder,
+    );
     if (!attackState) {
       continue;
     }
@@ -746,15 +807,21 @@ const applyOutcomeAttack = (
       return Math.max(0, Math.min(attackState.maxHit, Math.round(override.damage || 0)));
     })();
     const remainingHp = Math.max(state.hp - damage, 0);
-    const reductions = applySpecDefenceReduction(state.reductions, attack.weaponName, damage);
-    const key = stateKey(remainingHp, reductions);
+    const reductionState = applySpecDefenceReduction(
+      state.reductions,
+      attack.weaponName,
+      damage,
+      state.reductionOrder,
+    );
+    const key = stateKey(remainingHp, reductionState.reductions, reductionState.reductionOrder);
     const existing = next.get(key);
     if (existing) {
       existing.probability += state.probability;
     } else {
       next.set(key, {
         hp: remainingHp,
-        reductions,
+        reductions: reductionState.reductions,
+        reductionOrder: reductionState.reductionOrder,
         probability: state.probability,
       });
     }
@@ -773,7 +840,12 @@ export const computeSpecWeaponSwapGraph = (
   const baseMonster = buildBaseMonster(monster);
   const maxHp = baseMonster.skills.hp;
   const initialReductions = cloneReductions(monster.inputs.defenceReductions);
-  const initialMonster = withDefenceReductions(baseMonster, maxHp, initialReductions);
+  const initialMonster = withDefenceReductions(
+    baseMonster,
+    maxHp,
+    initialReductions,
+    initialReductionOrder(initialReductions),
+  );
   const normalLoadouts = loadouts
     .map((loadout, loadoutIndex) => ({ loadout, loadoutIndex }))
     .filter(({ loadout }) => !loadout.specSetup);
@@ -792,11 +864,12 @@ export const computeSpecWeaponSwapGraph = (
     loadoutIndex: number,
     hp: number,
     reductions: DefenceReductions,
+    reductionOrder: SpecReductionOrder,
   ): AttackCandidate | null => {
-    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}`;
+    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     if (!attackCache.has(key)) {
       const loadout = loadouts[loadoutIndex];
-      const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
+      const stateMonster = withDefenceReductions(baseMonster, hp, reductions, reductionOrder);
       setBoundedCache(attackCache, key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
     }
     return attackCache.get(key) || null;
@@ -809,10 +882,11 @@ export const computeSpecWeaponSwapGraph = (
     loadoutIndex: number,
     hp: number,
     reductions: DefenceReductions,
+    reductionOrder: SpecReductionOrder,
   ): FinishCandidate | null => {
-    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}`;
+    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     if (!finisherCandidateCache.has(key)) {
-      const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
+      const stateMonster = withDefenceReductions(baseMonster, hp, reductions, reductionOrder);
       setBoundedCache(
         finisherCandidateCache,
         key,
@@ -821,29 +895,30 @@ export const computeSpecWeaponSwapGraph = (
     }
     return finisherCandidateCache.get(key) || null;
   };
-  const getFinishers = (reductions: DefenceReductions): FinishCandidate[] => {
-    const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
+  const getFinishers = (reductions: DefenceReductions, reductionOrder: SpecReductionOrder): FinishCandidate[] => {
+    const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions, reductionOrder);
     return normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
       const finisher = buildFinishCandidate(loadout, loadoutIndex, stateMonster);
       return finisher ? [finisher] : [];
     });
   };
-  const getFinisherMemory = (reductions: DefenceReductions, continuous: boolean): Float64Array => {
-    const key = `${continuous ? 'c' : 'd'}|${reductionKey(reductions)}`;
+  const getFinisherMemory = (reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean): Float64Array => {
+    const key = `${continuous ? 'c' : 'd'}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     return getCachedMemory(
       finisherMemoryCache,
       key,
-      () => buildFinisherMemory(getFinishers(reductions), maxHp, continuous),
+      () => buildFinisherMemory(getFinishers(reductions, reductionOrder), maxHp, continuous),
     );
   };
   const getSingleFinisherMemory = (
     loadoutIndex: number,
     reductions: DefenceReductions,
+    reductionOrder: SpecReductionOrder,
     continuous: boolean,
   ): Float64Array => {
-    const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}`;
+    const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     return getCachedMemory(singleFinisherMemoryCache, key, () => {
-      const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
+      const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions, reductionOrder);
       const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster);
       return finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1);
     });
@@ -885,7 +960,12 @@ export const computeSpecWeaponSwaps = (
   const baseMonster = buildBaseMonster(monster);
   const maxHp = baseMonster.skills.hp;
   const initialReductions = cloneReductions(monster.inputs.defenceReductions);
-  const initialMonster = withDefenceReductions(baseMonster, maxHp, initialReductions);
+  const initialMonster = withDefenceReductions(
+    baseMonster,
+    maxHp,
+    initialReductions,
+    initialReductionOrder(initialReductions),
+  );
 
   const specLoadouts = loadouts
     .map((loadout, loadoutIndex) => ({ loadout, loadoutIndex }))
@@ -913,11 +993,12 @@ export const computeSpecWeaponSwaps = (
     loadoutIndex: number,
     hp: number,
     reductions: DefenceReductions,
+    reductionOrder: SpecReductionOrder,
   ): AttackCandidate | null => {
-    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}`;
+    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     if (!attackCache.has(key)) {
       const loadout = loadouts[loadoutIndex];
-      const stateMonster = withDefenceReductions(baseMonster, hp, reductions);
+      const stateMonster = withDefenceReductions(baseMonster, hp, reductions, reductionOrder);
       setBoundedCache(attackCache, key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
     }
     return attackCache.get(key) || null;
@@ -925,29 +1006,30 @@ export const computeSpecWeaponSwaps = (
 
   const finisherMemoryCache = new Map<string, Float64Array>();
   const singleFinisherMemoryCache = new Map<string, Float64Array>();
-  const getFinishers = (reductions: DefenceReductions): FinishCandidate[] => {
-    const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
+  const getFinishers = (reductions: DefenceReductions, reductionOrder: SpecReductionOrder): FinishCandidate[] => {
+    const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions, reductionOrder);
     return normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
       const finisher = buildFinishCandidate(loadout, loadoutIndex, stateMonster);
       return finisher ? [finisher] : [];
     });
   };
-  const getFinisherMemory = (reductions: DefenceReductions, continuous: boolean): Float64Array => {
-    const key = `${continuous ? 'c' : 'd'}|${reductionKey(reductions)}`;
+  const getFinisherMemory = (reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean): Float64Array => {
+    const key = `${continuous ? 'c' : 'd'}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     return getCachedMemory(
       finisherMemoryCache,
       key,
-      () => buildFinisherMemory(getFinishers(reductions), maxHp, continuous),
+      () => buildFinisherMemory(getFinishers(reductions, reductionOrder), maxHp, continuous),
     );
   };
   const getSingleFinisherMemory = (
     loadoutIndex: number,
     reductions: DefenceReductions,
+    reductionOrder: SpecReductionOrder,
     continuous: boolean,
   ): Float64Array => {
-    const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}`;
+    const key = `${continuous ? 'c' : 'd'}|${loadoutIndex}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     return getCachedMemory(singleFinisherMemoryCache, key, () => {
-      const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions);
+      const stateMonster = withDefenceReductions(baseMonster, maxHp, reductions, reductionOrder);
       const finisher = buildFinishCandidate(loadouts[loadoutIndex], loadoutIndex, stateMonster);
       return finisher ? buildFinisherMemory([finisher], maxHp, continuous) : new Float64Array(maxHp + 1);
     });
