@@ -451,10 +451,10 @@ class GlobalState implements State {
       }
 
       const response = JSON.parse(evt.data, WORKER_JSON_REVIVER) as WeaponSwapWorkerResponse;
-      this.updateCalcResults({
-        weaponSwap: response.error ? null : response.payload || null,
-        weaponSwapError: response.error || null,
-      });
+      // Replace the complete result. Deep-merging weapon swap arrays leaves stale
+      // points behind when the new monster has fewer HP than the previous one.
+      this.calc.weaponSwap = response.error ? null : response.payload || null;
+      this.calc.weaponSwapError = response.error || null;
       worker.terminate();
       this.weaponSwapWorker = undefined;
     };
