@@ -670,16 +670,16 @@ const SpecWeaponSwap: React.FC = observer(() => {
                                 Adaptive next spec after
                                 {' '}
                                 {result.attacks[0].weaponName}
-                                {' '}
-                                hit:
-                                {' '}
+                                :
                                 {result.adaptiveFollowUps.map((range, rangeIx) => (
                                   <React.Fragment key={`${range.fromDamage}-${range.toDamage}-${range.loadoutName}`}>
                                     {rangeIx > 0 && ', '}
-                                    {range.fromDamage === range.toDamage
-                                      ? `${range.fromDamage}`
-                                      : `${range.fromDamage}-${range.toDamage}`}
-                                    {' '}
+                                    {range.fromDamage === 0 && range.toDamage === 0
+                                      ? 'miss'
+                                      : `hit for ${range.fromDamage === range.toDamage
+                                        ? range.fromDamage
+                                        : `${range.fromDamage}-${range.toDamage}`}`}
+                                    {' -> '}
                                     {range.loadoutName}
                                   </React.Fragment>
                                 ))}
