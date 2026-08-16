@@ -656,6 +656,26 @@ const SpecWeaponSwap: React.FC = observer(() => {
                                 </span>
                               </span>
                             ))}
+                            {result.adaptiveFollowUps && result.adaptiveFollowUps.length > 0 && (
+                              <div className="mt-1 text-xs text-orange-700 dark:text-orange-300">
+                                Adaptive next spec after
+                                {' '}
+                                {result.attacks[0].weaponName}
+                                {' '}
+                                hit:
+                                {' '}
+                                {result.adaptiveFollowUps.map((range, rangeIx) => (
+                                  <React.Fragment key={`${range.fromDamage}-${range.toDamage}-${range.loadoutName}`}>
+                                    {rangeIx > 0 && ', '}
+                                    {range.fromDamage === range.toDamage
+                                      ? `${range.fromDamage}`
+                                      : `${range.fromDamage}-${range.toDamage}`}
+                                    {' '}
+                                    {range.loadoutName}
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-1.5 border-r">{result.finisherName}</td>

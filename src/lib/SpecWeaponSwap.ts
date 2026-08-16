@@ -59,6 +59,13 @@ export interface SpecSwapResult {
   expectedSeconds: number;
   finisherName: string;
   finisherSeconds: number;
+  adaptiveFollowUps?: SpecSwapAdaptiveRange[];
+}
+
+export interface SpecSwapAdaptiveRange {
+  fromDamage: number;
+  toDamage: number;
+  loadoutName: string;
 }
 
 export interface SpecSwapOutcomeOverride {
@@ -608,6 +615,73 @@ const getExpectedHp = (states: SpecState[]): number => (
   states.reduce((sum, state) => sum + (state.hp * state.probability), 0)
 );
 
+const buildAdaptiveFollowUps = (
+  firstAttack: SpecSwapAttack,
+  remainingEnergy: number,
+  specCandidates: AttackCandidate[],
+  maxHp: number,
+  initialReductions: DefenceReductions,
+  getAttackCandidate: (
+    loadoutIndex: number,
+    hp: number,
+    reductions: DefenceReductions,
+  ) => AttackCandidate | null,
+  getFinisherMemory: (reductions: DefenceReductions, continuous: boolean) => Float64Array,
+): SpecSwapAdaptiveRange[] => {
+  const firstCandidate = getAttackCandidate(firstAttack.loadoutIndex, maxHp, initialReductions);
+  if (!firstCandidate) {
+    return [];
+  }
+
+  const followUps = specCandidates.filter((candidate) => candidate.specCost <= remainingEnergy);
+  if (followUps.length === 0) {
+    return [];
+  }
+
+  const ranges: SpecSwapAdaptiveRange[] = [];
+  for (const damage of [...firstCandidate.histogram.keys()].sort((a, b) => a - b)) {
+    const firstState: SpecState = {
+      hp: Math.max(maxHp - damage, 0),
+      reductions: applySpecDefenceReduction(initialReductions, firstAttack.weaponName, damage),
+      probability: 1,
+    };
+    let best: AttackCandidate | null = null;
+    let bestTicks = Infinity;
+
+    for (const candidate of followUps) {
+      const nextStates = applyAttack([firstState], candidate, getAttackCandidate);
+      if (nextStates.length === 0) {
+        continue;
+      }
+      const ticks = candidate.speed + expectedRemainingTicks(
+        nextStates,
+        getFinisherMemory,
+        true,
+      );
+      if (ticks < bestTicks) {
+        best = candidate;
+        bestTicks = ticks;
+      }
+    }
+
+    if (!best) {
+      continue;
+    }
+    const previous = ranges[ranges.length - 1];
+    if (previous && previous.loadoutName === best.loadoutName && previous.toDamage + 1 === damage) {
+      previous.toDamage = damage;
+    } else {
+      ranges.push({
+        fromDamage: damage,
+        toDamage: damage,
+        loadoutName: best.loadoutName,
+      });
+    }
+  }
+
+  return ranges;
+};
+
 const buildBaseMonster = (monster: Monster): Monster => scaleMonster({
   ...(JSON.parse(JSON.stringify(monster)) as Monster),
   inputs: {
@@ -936,5 +1010,22 @@ export const computeSpecWeaponSwaps = (
   return results
     .filter((result) => result.attacks.length > 0)
     .sort((a, b) => a.expectedSeconds - b.expectedSeconds)
-    .slice(0, MAX_RESULTS);
+    .slice(0, MAX_RESULTS)
+    .map((result) => {
+      const energyAfterFirst = result.remainingEnergy + result.attacks
+        .slice(1)
+        .reduce((energy, attack) => energy + attack.specCost, 0);
+      return {
+        ...result,
+        adaptiveFollowUps: buildAdaptiveFollowUps(
+          result.attacks[0],
+          energyAfterFirst,
+          specCandidates,
+          maxHp,
+          initialReductions,
+          getAttackCandidate,
+          getFinisherMemory,
+        ),
+      };
+    });
 };
