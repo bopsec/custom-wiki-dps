@@ -380,7 +380,7 @@ export default class BaseCalc {
    * @see https://oldschool.runescape.wiki/w/Scythe_of_vitur
    */
   protected isWearingScythe(): boolean {
-    return this.wearing('Scythe of vitur') || this.allEquippedItems.some((ei) => ei.includes('of vitur'));
+    return this.wearing('Scythe of Vitur') || this.allEquippedItems.some((ei) => ei.includes('of vitur'));
   }
 
   /**
