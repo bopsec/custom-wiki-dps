@@ -69,6 +69,7 @@ export enum DetailKey {
   MAX_HIT_TOME = 'Max hit tome',
   MAX_HIT_FANG = 'Max hit fang',
   MAX_HIT_TONALZTICS = 'Max hit tonalztics',
+  MAX_HIT_GLYPHIC = 'Max hit glyphic attenuation',
   MAX_HIT_GODSWORD_SPEC = 'Max hit godsword spec',
   MAX_HIT_SPEC = 'Max hit spec',
   MAX_HIT_MAGIC_DMG = 'Max hit magic damage bonus',

@@ -516,6 +516,10 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       minHit = this.trackAdd(DetailKey.REPIRATORY_SYSTEM_MIN_HIT, minHit, Math.trunc(maxHit / 2));
     }
 
+    if (this.monster.version?.includes('Glyphic Attenuation')) {
+      maxHit = this.trackFactor(DetailKey.MAX_HIT_GLYPHIC, maxHit, this.getGlyphicAttenuationFactor());
+    }
+
     return [minHit, maxHit];
   }
 
@@ -793,6 +797,10 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       minHit = this.trackAdd(DetailKey.REPIRATORY_SYSTEM_MIN_HIT, minHit, Math.trunc(maxHit / 2));
     }
 
+    if (this.monster.version?.includes('Glyphic Attenuation')) {
+      maxHit = this.trackFactor(DetailKey.MAX_HIT_GLYPHIC, maxHit, this.getGlyphicAttenuationFactor());
+    }
+
     return [minHit, maxHit];
   }
 
@@ -1063,6 +1071,10 @@ export default class PlayerVsNPCCalc extends BaseCalc {
 
     if (this.monster.name === 'Respiratory system') {
       minHit = this.trackAdd(DetailKey.REPIRATORY_SYSTEM_MIN_HIT, minHit, Math.trunc(maxHit / 2));
+    }
+
+    if (this.monster.version?.includes('Glyphic Attenuation')) {
+      maxHit = this.trackFactor(DetailKey.MAX_HIT_GLYPHIC, maxHit, this.getGlyphicAttenuationFactor());
     }
 
     return [minHit, maxHit];
@@ -2510,6 +2522,27 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     return this.wearing('Sunspear')
       && this.opts.usingSpecialAttack
       && this.monster.inputs.monsterCurrentHp <= Math.trunc(max * 7 / 10);
+  }
+
+  private getGlyphicAttenuationFactor(): Factor {
+    const prayerBonus = this.player.bonuses.prayer;
+
+    let bonus = 0.0085 * prayerBonus;
+
+    if (prayerBonus >= 20) {
+      bonus += 0.07;
+    }
+    if (prayerBonus >= 30) {
+      bonus += 0.1;
+    }
+    if (prayerBonus >= 40) {
+      bonus += 0.15;
+    }
+    if (prayerBonus >= 50) {
+      bonus += 0.15;
+    }
+
+    return [Math.round((1 + bonus) * 10000), 10000];
   }
 
   private getSpellement(): Spellement | null {
