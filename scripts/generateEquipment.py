@@ -107,7 +107,18 @@ def getEquipmentData():
             'User-Agent': 'osrs-dps-calc (https://github.com/weirdgloop/osrs-dps-calc)'
         })
 
-        data = r.json()
+        if not r.ok:
+            print(f'Bucket API failed: HTTP {r.status_code}')
+            print(r.text[:1000])
+            r.raise_for_status()
+
+        try:
+            data = r.json()
+        except requests.exceptions.JSONDecodeError:
+            print(f'Bucket API returned non-JSON: HTTP {r.status_code}')
+            print(f'Content-Type: {r.headers.get("Content-Type")}')
+            print(r.text[:1000])
+            raise
 
         if 'bucket' not in data:
             # No results?
