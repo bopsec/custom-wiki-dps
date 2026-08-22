@@ -352,7 +352,7 @@ export default class BaseCalc {
    * @see https://oldschool.runescape.wiki/w/Crystal_bow
    */
   protected isWearingCrystalBow(): boolean {
-    return this.wearing('Crystal bow') || this.allEquippedItems.some((ei) => ei.includes('Bow of faerdhinen'));
+    return this.wearing('Crystal bow') || this.allEquippedItems.some((ei) => ei.includes('Bow of Faerdhinen'));
   }
 
   /**

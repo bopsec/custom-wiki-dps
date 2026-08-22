@@ -57,7 +57,7 @@ const equipmentAliases = {
   1089: [3473, 3472], // Black plateskirt
   1015: [12445, 12447], // Black skirt
   24551: [25882, 25876, 25878, 25872, 25870, 25880, 25874], // Blade of saeldor (c)
-  28955: [28957], // Blessed dizana's quiver#Normal
+  28955: [28957], // Blessed Dizana's quiver#Normal
   28260: [28473], // Blood ancient sceptre#Normal
   29022: [29043], // Blood moon chestplate#New
   29028: [29047], // Blood moon helm#New
@@ -74,7 +74,7 @@ const equipmentAliases = {
   12612: [26490], // Book of darkness
   12610: [26492], // Book of law
   12608: [26494], // Book of war
-  25867: [25896, 25890, 25892, 25886, 25884, 25894, 25888, 33021], // Bow of faerdhinen (c)
+  25867: [25896, 25890, 25892, 25886, 25884, 25894, 25888, 33021], // Bow of Faerdhinen (c)
   24204: [24206], // Brassica halo#Normal
   8844: [24136], // Bronze defender#Normal
   1155: [12211, 12221], // Bronze full helm

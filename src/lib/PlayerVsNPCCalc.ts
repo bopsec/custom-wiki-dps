@@ -612,7 +612,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [10, 7]);
       } else if (this.wearing(['Heavy ballista', 'Light ballista'])) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [5, 4]);
-      } else if (this.wearing('Tonalztics of ralos')) {
+      } else if (this.wearing('Tonalztics of Ralos')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [150, 100]);
       }
     }
@@ -759,7 +759,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       maxHit = this.trackAdd(DetailKey.MAX_HIT_RATBANE, maxHit, 10);
     }
 
-    if (this.wearing('Tonalztics of ralos')) {
+    if (this.wearing('Tonalztics of Ralos')) {
       // rolls 75% of max hit, but can hit twice
       // double hit is implemented in hit distribution
       maxHit = this.trackFactor(DetailKey.MAX_HIT_TONALZTICS, maxHit, [3, 4]);
@@ -873,7 +873,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.isRevWeaponBuffApplicable()) {
       attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_REV_WEAPON, attackRoll, [3, 2]);
     }
-    if (this.wearing('Tome of water') && (this.getSpellement() === 'water' || isBindSpell(this.player.spell))) { // todo does this go here?
+    if (this.wearing('Tome of Water') && (this.getSpellement() === 'water' || isBindSpell(this.player.spell))) { // todo does this go here?
       attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_TOME, attackRoll, [6, 5]);
     }
 
@@ -920,13 +920,13 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     } else if (this.wearing('Starter staff')) {
       maxHit = 8;
-    } else if (this.wearing(['Trident of the seas', 'Trident of the seas (e)'])) {
+    } else if (this.wearing(['Trident of the Seas', 'Trident of the Seas (e)'])) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 5));
     } else if (this.wearing("Thammaron's sceptre")) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 8));
     } else if (this.wearing('Accursed sceptre') || (this.wearing('Accursed sceptre (a)') && this.opts.usingSpecialAttack)) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 6));
-    } else if (this.wearing(['Trident of the swamp', 'Trident of the swamp (e)'])) {
+    } else if (this.wearing(['Trident of the Swamp', 'Trident of the Swamp (e)'])) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 2));
     } else if (this.wearing(['Sanguinesti staff', 'Holy sanguinesti staff'])) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3));
@@ -937,7 +937,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     } else if (this.wearing("Tumeken's shadow")) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) + 1);
-    } else if (this.wearing('Eye of ayak')) {
+    } else if (this.wearing('Eye of Ayak')) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) - 6);
     } else if (this.wearing('Warped sceptre')) {
       maxHit = Math.max(1, Math.trunc((8 * magicLevel + 96) / 37));
@@ -1051,9 +1051,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       minHit = this.trackFactor(DetailKey.MIN_HIT_SUNFIRE, maxHit, [1, 10]);
     }
 
-    if ((this.wearing('Tome of fire') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'fire')
-      || (this.wearing('Tome of water') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'water')
-       || (this.wearing('Tome of earth') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'earth')) {
+    if ((this.wearing('Tome of Fire') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'fire')
+      || (this.wearing('Tome of Water') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'water')
+       || (this.wearing('Tome of Earth') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'earth')) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_TOME, maxHit, [11, 10]);
     }
 
@@ -1428,7 +1428,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       ]);
     }
 
-    if (style === 'ranged' && this.wearing('Tonalztics of ralos') && this.player.equipment.weapon?.version === 'Charged') {
+    if (style === 'ranged' && this.wearing('Tonalztics of Ralos') && this.player.equipment.weapon?.version === 'Charged') {
       // roll two independent hits
       if (!this.opts.usingSpecialAttack) {
         dist = new AttackDistribution([standardHitDist, standardHitDist]);

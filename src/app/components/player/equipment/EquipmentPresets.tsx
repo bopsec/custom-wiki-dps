@@ -39,10 +39,10 @@ const EquipmentPresets: React.FC = () => {
           name: v.label,
           equipment: {
             head: findItemById(23971), // Crystal helm
-            cape: findItemById(28955), // Blessed dizana's quiver
+            cape: findItemById(28955), // Blessed Dizana's quiver
             neck: findItemById(33639), // Necklace of rupture
             ammo: findItemById(22947), // Rada's blessing 4
-            weapon: findItemById(25865), // Bow of faerdhinen
+            weapon: findItemById(25865), // Bow of Faerdhinen
             body: findItemById(23975), // Crystal body
             legs: findItemById(23979), // Crystal legs
             hands: findItemById(26235), // Zaryte vambraces
@@ -124,7 +124,7 @@ const EquipmentPresets: React.FC = () => {
           name: v.label,
           equipment: {
             head: findItemById(27235), // Masori mask (f)
-            cape: findItemById(28955), // Blessed dizana's quiver
+            cape: findItemById(28955), // Blessed Dizana's quiver
             neck: findItemById(33639), // Necklace of rupture
             ammo: findItemById(33595), // Seeking dragon arrow
             body: findItemById(27238), // Masori body (f)
@@ -228,7 +228,7 @@ const EquipmentPresets: React.FC = () => {
           name: v.label,
           equipment: {
             head: findItemById(11664), // Void ranger helm
-            cape: findItemById(28955), // Blessed dizana's quiver
+            cape: findItemById(28955), // Blessed Dizana's quiver
             neck: findItemById(33639), // Necklace of rupture
             ammo: findItemById(33595), // Seeking dragon arrow
             body: findItemById(13072), // Elite void top
