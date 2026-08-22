@@ -1624,12 +1624,13 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         firstMax = this.trackFactor(DetailKey.MAX_HIT_MAGGOT_MELEE_PUNISH, firstMax, [150, 100]);
       }
 
-      let firstMin = min;
+      let firstHit = new AttackDistribution([HitDistribution.linear(firstHitAcc, min, Math.max(min, firstMax))]);
+
       if (MAD_ANGEL_IDS.includes(this.monster.id) && this.monster.inputs.phase === 'Sword Cleave') {
-        firstMin = this.trackFactor(DetailKey.MIN_HIT_MAD_ANGEL, firstMax, [1, 2]);
+        const minimum = this.trackFactor(DetailKey.MIN_HIT_MAD_ANGEL, firstMax, [1, 2]);
+        firstHit = firstHit.firstHitMinimum(minimum);
       }
 
-      const firstHit = new AttackDistribution([HitDistribution.linear(firstHitAcc, firstMin, Math.max(firstMin, firstMax))]);
       const secondHit = HitDistribution.linear(acc, min, Math.max(min, secondMax));
       dist = firstHit.transform(
         (h) => {
