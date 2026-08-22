@@ -86,13 +86,18 @@ def getEquipmentData():
     equipment = []
     offset = 0
     fields_csv = ",".join(map(repr, BUCKET_API_FIELDS))
+
+    headers = {
+        'User-Agent': 'osrs-dps-calc (https://github.com/weirdgloop/osrs-dps-calc)'
+    }
+
     while True:
-        print('Fetching equipment info: ' + str(offset))
+        print(f'Fetching equipment info: {offset}')
+
         query = {
             'action': 'bucket',
             'format': 'json',
-            'query': 
-            (
+            'query': (
                 f"bucket('infobox_item')"
                 f".select({fields_csv})"
                 f".limit(500).offset({offset})"
@@ -103,36 +108,64 @@ def getEquipmentData():
             )
         }
 
-        r = requests.get(API_BASE + '?' + urllib.parse.urlencode(query), headers={
-            'User-Agent': 'osrs-dps-calc (https://github.com/weirdgloop/osrs-dps-calc)'
-        })
+        try:
+            r = requests.get(
+                API_BASE,
+                params=query,
+                headers=headers,
+                timeout=60
+            )
+        except requests.RequestException as e:
+            print(f'Bucket API request itself failed at offset {offset}')
+            print(f'Exception: {type(e).__name__}: {e}')
+            raise
+
+        print(f'Bucket API status: HTTP {r.status_code}')
+        print(f'Content-Type: {r.headers.get("Content-Type")}')
+        print(f'Content-Length header: {r.headers.get("Content-Length")}')
+        print(f'Response body length: {len(r.content)} bytes')
+        print(f'Final URL: {r.url}')
 
         if not r.ok:
-            print(f'Bucket API failed: HTTP {r.status_code}')
-            print(r.text[:1000])
+            print('Bucket API returned an unsuccessful HTTP status.')
+            print(f'Response headers: {dict(r.headers)}')
+            print(f'Response body: {repr(r.text[:2000])}')
             r.raise_for_status()
 
         try:
             data = r.json()
-        except requests.exceptions.JSONDecodeError:
-            print(f'Bucket API returned non-JSON: HTTP {r.status_code}')
+        except requests.exceptions.JSONDecodeError as e:
+            print('Bucket API returned a response that could not be parsed as JSON.')
+            print(f'Offset: {offset}')
+            print(f'HTTP status: {r.status_code}')
             print(f'Content-Type: {r.headers.get("Content-Type")}')
-            print(r.text[:1000])
+            print(f'Response body length: {len(r.content)} bytes')
+            print(f'Response headers: {dict(r.headers)}')
+            print(f'Final URL: {r.url}')
+            print(f'JSON error: {e}')
+            print(f'Response body: {repr(r.text[:2000])}')
             raise
 
         if 'bucket' not in data:
-            # No results?
+            print("Bucket API response did not contain a 'bucket' key.")
+            print(f'Response keys: {list(data.keys())}')
+            print(f'Response: {repr(data)[:2000]}')
             break
 
-        equipment = equipment + data['bucket']
+        rows = data['bucket']
+
+        print(f'Received {len(rows)} equipment rows')
+
+        equipment.extend(rows)
 
         # Bucket's API doesn't tell you when there are more results, so we'll just have to guess
-        if len(data['bucket']) == 500:
+        if len(rows) == 500:
             offset += 500
         else:
             # If we are at the end of the results, break out of this loop
             break
 
+    print(f'Finished fetching equipment. Total rows: {len(equipment)}')
     return equipment
 
 
