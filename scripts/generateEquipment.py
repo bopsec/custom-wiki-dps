@@ -271,6 +271,22 @@ def main():
     skipped_img_dls = 0
     required_imgs = set(required_imgs)
 
+    removed_count = 0
+
+    if os.path.isdir(IMG_PATH):
+        for root, _, files in os.walk(IMG_PATH):
+            for file in files:
+                rel_path = os.path.relpath(os.path.join(root, file), IMG_PATH).replace(os.sep, '/')
+
+                if rel_path not in required_imgs:
+                    to_remove = os.path.join(root, file)
+                    try:
+                        os.remove(to_remove)
+                        removed_count += 1
+                        print(f'Removed unused image: {rel_path}')
+                    except OSError as e:
+                        print(f'Error removing unused image {rel_path}: {e}')
+
     # Fetch all the images from the wiki and store them for local serving
     for idx, img in enumerate(required_imgs):
         if os.path.isfile(IMG_PATH + img):
@@ -293,6 +309,7 @@ def main():
     print('Total images saved: ' + str(success_img_dls))
     print('Total images skipped (already exists): ' + str(skipped_img_dls))
     print('Total images failed to save: ' + str(failed_img_dls))
+    print('Total unused images removed: ' + str(removed_count))
 
 
 main()
