@@ -2527,22 +2527,22 @@ export default class PlayerVsNPCCalc extends BaseCalc {
   private getGlyphicAttenuationFactor(): Factor {
     const prayerBonus = this.player.bonuses.prayer;
 
-    let bonus = 0.0085 * prayerBonus;
+    let bonus = Math.floor(0.85 * prayerBonus);
 
     if (prayerBonus >= 20) {
-      bonus += 0.07;
+      bonus += 7;
     }
     if (prayerBonus >= 30) {
-      bonus += 0.1;
+      bonus += 10;
     }
     if (prayerBonus >= 40) {
-      bonus += 0.15;
+      bonus += 15;
     }
     if (prayerBonus >= 50) {
-      bonus += 0.15;
+      bonus += 15;
     }
 
-    return [Math.round((1 + bonus) * 10000), 10000];
+    return [100 + bonus, 100];
   }
 
   private getSpellement(): Spellement | null {
