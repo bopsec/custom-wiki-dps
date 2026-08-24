@@ -516,6 +516,10 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       minHit = this.trackAdd(DetailKey.REPIRATORY_SYSTEM_MIN_HIT, minHit, Math.trunc(maxHit / 2));
     }
 
+    if (this.monster.version?.includes('Glyphic Attenuation')) {
+      maxHit = this.trackFactor(DetailKey.MAX_HIT_GLYPHIC, maxHit, this.getGlyphicAttenuationFactor());
+    }
+
     return [minHit, maxHit];
   }
 
@@ -612,7 +616,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [10, 7]);
       } else if (this.wearing(['Heavy ballista', 'Light ballista'])) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [5, 4]);
-      } else if (this.wearing('Tonalztics of ralos')) {
+      } else if (this.wearing('Tonalztics of Ralos')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [150, 100]);
       }
     }
@@ -759,7 +763,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       maxHit = this.trackAdd(DetailKey.MAX_HIT_RATBANE, maxHit, 10);
     }
 
-    if (this.wearing('Tonalztics of ralos')) {
+    if (this.wearing('Tonalztics of Ralos')) {
       // rolls 75% of max hit, but can hit twice
       // double hit is implemented in hit distribution
       maxHit = this.trackFactor(DetailKey.MAX_HIT_TONALZTICS, maxHit, [3, 4]);
@@ -791,6 +795,10 @@ export default class PlayerVsNPCCalc extends BaseCalc {
 
     if (this.monster.name === 'Respiratory system') {
       minHit = this.trackAdd(DetailKey.REPIRATORY_SYSTEM_MIN_HIT, minHit, Math.trunc(maxHit / 2));
+    }
+
+    if (this.monster.version?.includes('Glyphic Attenuation')) {
+      maxHit = this.trackFactor(DetailKey.MAX_HIT_GLYPHIC, maxHit, this.getGlyphicAttenuationFactor());
     }
 
     return [minHit, maxHit];
@@ -873,16 +881,16 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.isRevWeaponBuffApplicable()) {
       attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_REV_WEAPON, attackRoll, [3, 2]);
     }
-    if (this.wearing('Tome of water') && (this.getSpellement() === 'water' || isBindSpell(this.player.spell))) { // todo does this go here?
+    if (this.wearing('Tome of Water') && (this.getSpellement() === 'water' || isBindSpell(this.player.spell))) { // todo does this go here?
       attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_TOME, attackRoll, [6, 5]);
     }
 
     if (this.opts.usingSpecialAttack) {
       if (this.isWearingAccursedSceptre()) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
-      } else if (this.wearing('Volatile nightmare staff')) {
+      } else if (this.wearing('Volatile Nightmare staff')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
-      } else if (this.wearing('Eye of ayak')) {
+      } else if (this.wearing('Eye of Ayak')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [2, 1]);
       }
     }
@@ -920,13 +928,13 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     } else if (this.wearing('Starter staff')) {
       maxHit = 8;
-    } else if (this.wearing(['Trident of the seas', 'Trident of the seas (e)'])) {
+    } else if (this.wearing(['Trident of the Seas', 'Trident of the Seas (e)'])) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 5));
     } else if (this.wearing("Thammaron's sceptre")) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 8));
     } else if (this.wearing('Accursed sceptre') || (this.wearing('Accursed sceptre (a)') && this.opts.usingSpecialAttack)) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 6));
-    } else if (this.wearing(['Trident of the swamp', 'Trident of the swamp (e)'])) {
+    } else if (this.wearing(['Trident of the Swamp', 'Trident of the Swamp (e)'])) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3 - 2));
     } else if (this.wearing(['Sanguinesti staff', 'Holy sanguinesti staff'])) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3));
@@ -937,7 +945,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     } else if (this.wearing("Tumeken's shadow")) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) + 1);
-    } else if (this.wearing('Eye of ayak')) {
+    } else if (this.wearing('Eye of Ayak')) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) - 6);
     } else if (this.wearing('Warped sceptre')) {
       maxHit = Math.max(1, Math.trunc((8 * magicLevel + 96) / 37));
@@ -945,9 +953,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       // although the +10 is technically a ratbane bonus, the weapon can't be used against non-rats
       // and shows this max hit against the combat dummy as well
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) - 5) + 10;
-    } else if (this.wearing('Eldritch nightmare staff') && this.opts.usingSpecialAttack) {
+    } else if (this.wearing('Eldritch Nightmare staff') && this.opts.usingSpecialAttack) {
       maxHit = Math.max(1, Math.min(44, Math.trunc((99 + 44 * magicLevel) / 99)));
-    } else if (this.wearing('Volatile nightmare staff') && this.opts.usingSpecialAttack) {
+    } else if (this.wearing('Volatile Nightmare staff') && this.opts.usingSpecialAttack) {
       maxHit = Math.max(1, Math.min(58, Math.trunc((99 + 58 * magicLevel) / 99)));
     } else if (this.wearing(['Crystal staff (basic)', 'Corrupted staff (basic)'])) {
       maxHit = 23;
@@ -974,7 +982,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     }
     this.track(DetailKey.MAX_HIT_BASE, maxHit);
 
-    if (this.opts.usingSpecialAttack && this.wearing('Eye of ayak')) {
+    if (this.opts.usingSpecialAttack && this.wearing('Eye of Ayak')) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [13, 10]);
     }
 
@@ -1051,9 +1059,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       minHit = this.trackFactor(DetailKey.MIN_HIT_SUNFIRE, maxHit, [1, 10]);
     }
 
-    if ((this.wearing('Tome of fire') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'fire')
-      || (this.wearing('Tome of water') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'water')
-       || (this.wearing('Tome of earth') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'earth')) {
+    if ((this.wearing('Tome of Fire') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'fire')
+      || (this.wearing('Tome of Water') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'water')
+       || (this.wearing('Tome of Earth') && this.player.equipment.shield?.version === 'Charged' && this.getSpellement() === 'earth')) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_TOME, maxHit, [11, 10]);
     }
 
@@ -1063,6 +1071,10 @@ export default class PlayerVsNPCCalc extends BaseCalc {
 
     if (this.monster.name === 'Respiratory system') {
       minHit = this.trackAdd(DetailKey.REPIRATORY_SYSTEM_MIN_HIT, minHit, Math.trunc(maxHit / 2));
+    }
+
+    if (this.monster.version?.includes('Glyphic Attenuation')) {
+      maxHit = this.trackFactor(DetailKey.MAX_HIT_GLYPHIC, maxHit, this.getGlyphicAttenuationFactor());
     }
 
     return [minHit, maxHit];
@@ -1428,7 +1440,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       ]);
     }
 
-    if (style === 'ranged' && this.wearing('Tonalztics of ralos') && this.player.equipment.weapon?.version === 'Charged') {
+    if (style === 'ranged' && this.wearing('Tonalztics of Ralos') && this.player.equipment.weapon?.version === 'Charged') {
       // roll two independent hits
       if (!this.opts.usingSpecialAttack) {
         dist = new AttackDistribution([standardHitDist, standardHitDist]);
@@ -1624,12 +1636,13 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         firstMax = this.trackFactor(DetailKey.MAX_HIT_MAGGOT_MELEE_PUNISH, firstMax, [150, 100]);
       }
 
-      let firstMin = min;
+      let firstHit = new AttackDistribution([HitDistribution.linear(firstHitAcc, min, Math.max(min, firstMax))]);
+
       if (MAD_ANGEL_IDS.includes(this.monster.id) && this.monster.inputs.phase === 'Sword Cleave') {
-        firstMin = this.trackFactor(DetailKey.MIN_HIT_MAD_ANGEL, firstMax, [1, 2]);
+        const minimum = this.trackFactor(DetailKey.MIN_HIT_MAD_ANGEL, firstMax, [1, 2]);
+        firstHit = firstHit.firstHitMinimum(minimum);
       }
 
-      const firstHit = new AttackDistribution([HitDistribution.linear(firstHitAcc, firstMin, Math.max(firstMin, firstMax))]);
       const secondHit = HitDistribution.linear(acc, min, Math.max(min, secondMax));
       dist = firstHit.transform(
         (h) => {
@@ -2509,6 +2522,27 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     return this.wearing('Sunspear')
       && this.opts.usingSpecialAttack
       && this.monster.inputs.monsterCurrentHp <= Math.trunc(max * 7 / 10);
+  }
+
+  private getGlyphicAttenuationFactor(): Factor {
+    const prayerBonus = this.player.bonuses.prayer;
+
+    let bonus = Math.floor(0.85 * prayerBonus);
+
+    if (prayerBonus >= 20) {
+      bonus += 7;
+    }
+    if (prayerBonus >= 30) {
+      bonus += 10;
+    }
+    if (prayerBonus >= 40) {
+      bonus += 15;
+    }
+    if (prayerBonus >= 50) {
+      bonus += 15;
+    }
+
+    return [100 + bonus, 100];
   }
 
   private getSpellement(): Spellement | null {

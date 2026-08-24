@@ -77,7 +77,7 @@ ITEMS_TO_SKIP = [
     'Corrupted tumeken\'s shadow',
     'Corrupted twisted bow',
     'Corrupted voidwaker',
-    'Corrupted volatile nightmare staff',
+    'Corrupted Volatile Nightmare staff',
     'The dogsword (Deadman Mode)',
     'Thunder khopesh (Deadman Mode)'
 ]
@@ -86,13 +86,18 @@ def getEquipmentData():
     equipment = []
     offset = 0
     fields_csv = ",".join(map(repr, BUCKET_API_FIELDS))
+
+    headers = {
+        'User-Agent': 'bopsec-osrs-dps-calc (https://dps.bopsec.com; https://github.com/bopsec/osrs-dps-calc)'
+    }
+
     while True:
-        print('Fetching equipment info: ' + str(offset))
+        print(f'Fetching equipment info: {offset}')
+
         query = {
             'action': 'bucket',
             'format': 'json',
-            'query': 
-            (
+            'query': (
                 f"bucket('infobox_item')"
                 f".select({fields_csv})"
                 f".limit(500).offset({offset})"
@@ -103,25 +108,64 @@ def getEquipmentData():
             )
         }
 
-        r = requests.get(API_BASE + '?' + urllib.parse.urlencode(query), headers={
-            'User-Agent': 'bopsec-osrs-dps-calc (https://dps.bopsec.com; https://github.com/bopsec/osrs-dps-calc)'
-        })
+        try:
+            r = requests.get(
+                API_BASE,
+                params=query,
+                headers=headers,
+                timeout=60
+            )
+        except requests.RequestException as e:
+            print(f'Bucket API request itself failed at offset {offset}')
+            print(f'Exception: {type(e).__name__}: {e}')
+            raise
 
-        data = r.json()
+        print(f'Bucket API status: HTTP {r.status_code}')
+        print(f'Content-Type: {r.headers.get("Content-Type")}')
+        print(f'Content-Length header: {r.headers.get("Content-Length")}')
+        print(f'Response body length: {len(r.content)} bytes')
+        print(f'Final URL: {r.url}')
+
+        if not r.ok:
+            print('Bucket API returned an unsuccessful HTTP status.')
+            print(f'Response headers: {dict(r.headers)}')
+            print(f'Response body: {repr(r.text[:2000])}')
+            r.raise_for_status()
+
+        try:
+            data = r.json()
+        except requests.exceptions.JSONDecodeError as e:
+            print('Bucket API returned a response that could not be parsed as JSON.')
+            print(f'Offset: {offset}')
+            print(f'HTTP status: {r.status_code}')
+            print(f'Content-Type: {r.headers.get("Content-Type")}')
+            print(f'Response body length: {len(r.content)} bytes')
+            print(f'Response headers: {dict(r.headers)}')
+            print(f'Final URL: {r.url}')
+            print(f'JSON error: {e}')
+            print(f'Response body: {repr(r.text[:2000])}')
+            raise
 
         if 'bucket' not in data:
-            # No results?
+            print("Bucket API response did not contain a 'bucket' key.")
+            print(f'Response keys: {list(data.keys())}')
+            print(f'Response: {repr(data)[:2000]}')
             break
 
-        equipment = equipment + data['bucket']
+        rows = data['bucket']
+
+        print(f'Received {len(rows)} equipment rows')
+
+        equipment.extend(rows)
 
         # Bucket's API doesn't tell you when there are more results, so we'll just have to guess
-        if len(data['bucket']) == 500:
+        if len(rows) == 500:
             offset += 500
         else:
             # If we are at the end of the results, break out of this loop
             break
 
+    print(f'Finished fetching equipment. Total rows: {len(equipment)}')
     return equipment
 
 
@@ -227,6 +271,22 @@ def main():
     skipped_img_dls = 0
     required_imgs = set(required_imgs)
 
+    removed_count = 0
+
+    if os.path.isdir(IMG_PATH):
+        for root, _, files in os.walk(IMG_PATH):
+            for file in files:
+                rel_path = os.path.relpath(os.path.join(root, file), IMG_PATH).replace(os.sep, '/')
+
+                if rel_path not in required_imgs:
+                    to_remove = os.path.join(root, file)
+                    try:
+                        os.remove(to_remove)
+                        removed_count += 1
+                        print(f'Removed unused image: {rel_path}')
+                    except OSError as e:
+                        print(f'Error removing unused image {rel_path}: {e}')
+
     # Fetch all the images from the wiki and store them for local serving
     for idx, img in enumerate(required_imgs):
         if os.path.isfile(IMG_PATH + img):
@@ -249,6 +309,7 @@ def main():
     print('Total images saved: ' + str(success_img_dls))
     print('Total images skipped (already exists): ' + str(skipped_img_dls))
     print('Total images failed to save: ' + str(failed_img_dls))
+    print('Total unused images removed: ' + str(removed_count))
 
 
 main()

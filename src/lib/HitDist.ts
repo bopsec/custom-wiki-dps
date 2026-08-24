@@ -437,30 +437,18 @@ export class AttackDistribution {
       return this;
     }
 
-    const firstDist = this.dists[0];
-
-    const accuracy = sum(
-      firstDist.hits
-        .filter((h) => h.hitsplats[0]?.accurate)
-        .map((h) => h.probability),
-    );
-
-    const firstMax = max(
-      firstDist.hits
-        .filter((h) => h.hitsplats[0]?.accurate)
-        .map((h) => h.hitsplats[0].damage),
-    ) ?? minimum;
-
-    const newFirstDist = HitDistribution.linear(
-      accuracy,
-      minimum,
-      Math.max(minimum, firstMax),
+    const newFirstDist = this.dists[0].transform(
+      (h) => HitDistribution.single(
+        1.0,
+        [new Hitsplat(Math.max(h.damage, minimum), h.accurate)],
+      ),
+      { transformInaccurate: false },
     );
 
     return new AttackDistribution([
       newFirstDist,
       ...this.dists.slice(1),
-    ]);
+    ]).flatten();
   }
 
   private map(m: (d: HitDistribution) => HitDistribution) {

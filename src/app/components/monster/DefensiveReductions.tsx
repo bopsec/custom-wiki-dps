@@ -118,7 +118,7 @@ const DefensiveReductions: React.FC = observer(() => {
             <span className="pl-2">
               <img src={tonalztic.src} width={18} className="inline-block" alt="" />
               {' '}
-              Tonalztics of ralos&apos; hits
+              Tonalztics of Ralos&apos; hits
             </span>
           </div>
           <div className="w-full">
