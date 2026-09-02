@@ -536,6 +536,7 @@ export default class BaseCalc {
         'Broad arrows',
         'Broad bolts',
         'Amethyst broad bolts',
+        'Seeking broad arrows',
       ])
       && this.player.style.type === 'ranged'
     ) {
