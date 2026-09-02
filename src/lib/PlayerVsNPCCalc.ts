@@ -21,7 +21,6 @@ import {
   canUseSunfireRunes,
   getSpellMaxHit,
   isBindSpell,
-  Spellement,
 } from '@/types/Spell';
 import { PrayerData, PrayerMap } from '@/enums/Prayer';
 import { isVampyre, MonsterAttribute } from '@/enums/MonsterAttribute';
@@ -992,6 +991,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     }
     if (this.isChargeSpellApplicable()) {
       maxHit += 10;
+    }
+    if (this.hasMatchingElementalAmulet()) {
+      maxHit += 2;
     }
 
     // We need the basehit value for the elemental bonus later.
@@ -2543,13 +2545,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     }
 
     return [100 + bonus, 100];
-  }
-
-  private getSpellement(): Spellement | null {
-    const spell = this.player.spell;
-    if (!spell) return null;
-
-    return spell?.element;
   }
 
   private getMonsterWeakness(): Monster['weakness'] {
