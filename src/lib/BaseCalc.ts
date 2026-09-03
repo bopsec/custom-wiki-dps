@@ -20,6 +20,7 @@ import { getCombatStylesForCategory, isDefined } from '@/utils';
 import { EquipmentCategory } from '@/enums/EquipmentCategory';
 import { getRangedDamageType } from '@/types/PlayerCombatStyle';
 import { AttackDistribution, HitDistribution } from '@/lib/HitDist';
+import { Spellement } from '@/types/Spell';
 
 export interface CalcOpts {
   loadoutName?: string,
@@ -535,6 +536,7 @@ export default class BaseCalc {
         'Broad arrows',
         'Broad bolts',
         'Amethyst broad bolts',
+        'Seeking broad arrows',
       ])
       && this.player.style.type === 'ranged'
     ) {
@@ -619,6 +621,29 @@ export default class BaseCalc {
       default:
         return false;
     }
+  }
+
+  protected getSpellement(): Spellement | null {
+    return this.player.spell?.element ?? null;
+  }
+
+  protected hasMatchingElementalAmulet(): boolean {
+    const spellement = this.getSpellement();
+    if (!spellement) {
+      return false;
+    }
+    if (this.wearing('Elemental amulet')) {
+      return true;
+    }
+
+    const amuletByElement: Record<Spellement, string> = {
+      air: 'Amulet of air',
+      water: 'Amulet of water',
+      earth: 'Amulet of earth',
+      fire: 'Amulet of fire',
+    };
+
+    return this.wearing(amuletByElement[spellement]);
   }
 
   /**
