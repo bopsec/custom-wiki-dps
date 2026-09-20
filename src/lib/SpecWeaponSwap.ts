@@ -78,7 +78,16 @@ export interface SpecSwapOutcomeOverride {
 interface AttackCandidate extends SpecSwapAttack {
   speed: number;
   histogram: Map<number, number>;
+  outcomes: AttackOutcome[];
 }
+
+export interface SpecSwapAttackOutcome {
+  damage: number;
+  successfulHits: number;
+  probability: number;
+}
+
+type AttackOutcome = SpecSwapAttackOutcome;
 
 interface FinishCandidate {
   loadoutIndex: number;
@@ -109,7 +118,7 @@ const DEFENCE_REDUCTION_SPEC_WEAPONS = [
   'Arclight',
   'Emberlight',
   'Bandos godsword',
-  'Tonalztics of ralos',
+  'Tonalztics of Ralos',
   'Accursed sceptre',
   'Accursed sceptre (a)',
   'Eye of ayak',
@@ -175,13 +184,15 @@ const withDefenceReductions = (
   },
 }));
 
-const applySpecDefenceReduction = (
+export const applySpecDefenceReduction = (
   reductions: DefenceReductions,
   weaponName: string,
   damage: number,
+  successfulHits: number,
   reductionOrder: SpecReductionOrder,
 ): { reductions: DefenceReductions, reductionOrder: SpecReductionOrder } => {
-  if (damage <= 0) {
+  const isSuccessfulTonalzticsHit = weaponName === 'Tonalztics of Ralos' && successfulHits > 0;
+  if (damage <= 0 && !isSuccessfulTonalzticsHit) {
     return { reductions, reductionOrder };
   }
 
@@ -206,8 +217,8 @@ const applySpecDefenceReduction = (
       next.bgs += damage;
       nextOrder.push({ type: 'bgs', damage });
       break;
-    case 'Tonalztics of ralos':
-      next.tonalztic += 1;
+    case 'Tonalztics of Ralos':
+      next.tonalztic += successfulHits;
       break;
     case 'Accursed sceptre':
     case 'Accursed sceptre (a)':
@@ -234,6 +245,22 @@ const histogramFromCalc = (calc: PlayerVsNPCCalc): Map<number, number> => {
     histogram.set(damage, (histogram.get(damage) || 0) + hit.probability);
   });
   return histogram;
+};
+
+export const getSpecSwapAttackOutcomes = (calc: PlayerVsNPCCalc): SpecSwapAttackOutcome[] => {
+  const outcomes = new Map<string, AttackOutcome>();
+  calc.getDistribution().zipped.hits.forEach((hit) => {
+    const damage = hit.getSum();
+    const successfulHits = hit.hitsplats.filter((hitsplat) => hitsplat.accurate).length;
+    const key = `${damage}:${successfulHits}`;
+    const existing = outcomes.get(key);
+    if (existing) {
+      existing.probability += hit.probability;
+    } else {
+      outcomes.set(key, { damage, successfulHits, probability: hit.probability });
+    }
+  });
+  return [...outcomes.values()];
 };
 
 const getRemainingTicks = (
@@ -362,17 +389,18 @@ const applyAttack = (
       continue;
     }
 
-    for (const [rolledDamage, damageProbability] of attackState.histogram.entries()) {
-      const damage = dealDamage ? rolledDamage : 0;
+    for (const outcome of attackState.outcomes) {
+      const damage = dealDamage ? outcome.damage : 0;
       const remainingHp = Math.max(state.hp - damage, 0);
       const reductionState = applySpecDefenceReduction(
         state.reductions,
         attack.weaponName,
         damage,
+        outcome.successfulHits,
         state.reductionOrder,
       );
       const key = stateKey(remainingHp, reductionState.reductions, reductionState.reductionOrder);
-      const probability = state.probability * damageProbability;
+      const probability = state.probability * outcome.probability;
       const existing = next.get(key);
       if (existing) {
         existing.probability += probability;
@@ -622,6 +650,7 @@ const buildAttackCandidate = (
     accuracy: specCalc.getDisplayHitChance(),
     speed: specCalc.getExpectedAttackSpeed(),
     histogram: histogramFromCalc(specCalc),
+    outcomes: getSpecSwapAttackOutcomes(specCalc),
   };
 };
 
@@ -682,24 +711,35 @@ const buildAdaptiveFollowUps = (
   }
 
   const ranges: SpecSwapAdaptiveRange[] = [];
-  for (const damage of [...firstCandidate.histogram.keys()].sort((a, b) => a - b)) {
-    const firstReductionState = applySpecDefenceReduction(
-      initialReductions,
-      firstAttack.weaponName,
-      damage,
-      firstReductionOrder,
-    );
-    const firstState: SpecState = {
-      hp: Math.max(maxHp - damage, 0),
-      reductions: firstReductionState.reductions,
-      reductionOrder: firstReductionState.reductionOrder,
-      probability: 1,
-    };
+  const outcomesByDamage = new Map<number, AttackOutcome[]>();
+  firstCandidate.outcomes.forEach((outcome) => {
+    const outcomes = outcomesByDamage.get(outcome.damage) || [];
+    outcomes.push(outcome);
+    outcomesByDamage.set(outcome.damage, outcomes);
+  });
+
+  for (const [damage, outcomes] of [...outcomesByDamage.entries()].sort(([a], [b]) => a - b)) {
+    const totalProbability = outcomes.reduce((sum, outcome) => sum + outcome.probability, 0);
+    const firstStates = outcomes.map((outcome): SpecState => {
+      const firstReductionState = applySpecDefenceReduction(
+        initialReductions,
+        firstAttack.weaponName,
+        damage,
+        outcome.successfulHits,
+        firstReductionOrder,
+      );
+      return {
+        hp: Math.max(maxHp - damage, 0),
+        reductions: firstReductionState.reductions,
+        reductionOrder: firstReductionState.reductionOrder,
+        probability: outcome.probability / totalProbability,
+      };
+    });
     let best: AttackCandidate | null = null;
     let bestTicks = Infinity;
 
     for (const candidate of followUps) {
-      const nextStates = applyAttack([firstState], candidate, getAttackCandidate);
+      const nextStates = applyAttack(firstStates, candidate, getAttackCandidate);
       if (nextStates.length === 0) {
         continue;
       }
@@ -811,6 +851,7 @@ const applyOutcomeAttack = (
       state.reductions,
       attack.weaponName,
       damage,
+      damage > 0 ? 1 : 0,
       state.reductionOrder,
     );
     const key = stateKey(remainingHp, reductionState.reductions, reductionState.reductionOrder);
