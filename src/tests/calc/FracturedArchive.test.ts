@@ -40,12 +40,36 @@ describe('Fractured Archive rewards', () => {
     const boosted = calculatePlayerVsNpc(weak, player);
     expect(boosted.maxHit).toBeGreaterThan(base.maxHit);
     expect(boosted.dist.getExpectedDamage()).toBeGreaterThan(base.dist.getExpectedDamage());
-    const smash = getTestPlayer(neutral, {
+    const smash = getTestPlayer(weak, {
       equipment: { weapon },
       style: { name: 'Smash', type: 'crush', stance: 'Aggressive' },
     });
+    const unmodifiedMax = calculatePlayerVsNpc(weak, smash).maxHit;
+    const small = calculatePlayerVsNpc({ ...weak, size: 1 }, player);
+    const medium = calculatePlayerVsNpc({ ...weak, size: 2 }, player);
+    expect(small.maxHit).toBe(unmodifiedMax);
+    expect(medium.maxHit).toBe(Math.trunc(unmodifiedMax * 1.2));
+    expect(boosted.maxHit).toBe(Math.trunc(unmodifiedMax * 1.4));
+    for (const result of [small, medium, boosted]) {
+      expect(result.dist.asHistogram().at(-1)?.name).toBe(result.maxHit.toString());
+    }
     expect(smash.attackSpeed).toBe(3);
     expect(player.attackSpeed).toBe(5);
+  });
+
+  test('a 61 base max cannot create a 76 damage hit from the size bonus', () => {
+    const monster = { ...getTestMonsterById(415), size: 3 };
+    const weapon = findEquipment('The Obligator');
+    const setup = (name: 'Smash' | 'Thrust') => getTestPlayer(monster, {
+      equipment: { weapon },
+      bonuses: { str: 288 },
+      style: { name, type: 'crush', stance: 'Aggressive' },
+    });
+    const baseMax = calculatePlayerVsNpc(monster, setup('Smash')).maxHit;
+    const thrust = calculatePlayerVsNpc(monster, setup('Thrust'));
+    expect(baseMax).toBe(61);
+    expect(thrust.maxHit).toBe(85);
+    expect(thrust.dist.asHistogram()[76].value).toBe(0);
   });
 
   test('Zorya has a 3 tick normal attack and faster empowered follow-ups', () => {
