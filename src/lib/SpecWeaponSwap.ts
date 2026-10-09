@@ -781,6 +781,11 @@ const buildBaseMonster = (monster: Monster): Monster => scaleMonster({
   },
 });
 
+const getStartingHp = (monster: Monster): number => Math.min(
+  monster.skills.hp,
+  Math.max(1, monster.inputs.monsterCurrentHp || monster.skills.hp),
+);
+
 const makeInitialState = (maxHp: number, reductions: DefenceReductions): SpecState[] => [{
   hp: maxHp,
   reductions: cloneReductions(reductions),
@@ -879,7 +884,7 @@ export const computeSpecWeaponSwapGraph = (
   graphContinuous: boolean,
 ): SpecSwapMode => {
   const baseMonster = buildBaseMonster(monster);
-  const maxHp = baseMonster.skills.hp;
+  const maxHp = getStartingHp(baseMonster);
   const initialReductions = cloneReductions(monster.inputs.defenceReductions);
   const initialMonster = withDefenceReductions(
     baseMonster,
@@ -999,7 +1004,7 @@ export const computeSpecWeaponSwaps = (
   options: SpecSwapOptions,
 ): SpecSwapResult[] => {
   const baseMonster = buildBaseMonster(monster);
-  const maxHp = baseMonster.skills.hp;
+  const maxHp = getStartingHp(baseMonster);
   const initialReductions = cloneReductions(monster.inputs.defenceReductions);
   const initialMonster = withDefenceReductions(
     baseMonster,
