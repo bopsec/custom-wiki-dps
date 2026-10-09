@@ -1649,13 +1649,15 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       const crush = this.monster.defensive.crush;
       const rolls = 2 + Number(this.monster.defensive.stab > crush) + Number(this.monster.defensive.slash > crush);
       const sizeBonus = Math.min(Math.max(this.monster.size - 1, 0), 2);
-      const hitRange = max - min + 1;
+      // The size bonus raises the maximum damage roll. Scale each roll's outcome range,
+      // not the chosen hitsplat, so every damage value through the final max is possible.
+      const thrustMax = Math.trunc(max * (100 + 20 * sizeBonus) / 100);
+      const hitRange = thrustMax - min + 1;
       const hits = [new WeightedHit(1 - firstHitAcc, [Hitsplat.INACCURATE])];
-      for (let damage = min; damage <= max; damage++) {
+      for (let damage = min; damage <= thrustMax; damage++) {
         const high = ((damage - min + 1) / hitRange) ** rolls;
         const low = ((damage - min) / hitRange) ** rolls;
-        const scaledDamage = Math.trunc(damage * (100 + 20 * sizeBonus) / 100);
-        hits.push(new WeightedHit(firstHitAcc * (high - low), [new Hitsplat(scaledDamage)]));
+        hits.push(new WeightedHit(firstHitAcc * (high - low), [new Hitsplat(damage)]));
       }
       dist = new AttackDistribution([new HitDistribution(hits).flatten()]);
     }

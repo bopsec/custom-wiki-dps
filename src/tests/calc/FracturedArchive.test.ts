@@ -57,19 +57,28 @@ describe('Fractured Archive rewards', () => {
     expect(player.attackSpeed).toBe(5);
   });
 
-  test('a 61 base max cannot create a 76 damage hit from the size bonus', () => {
+  test('size-adjusted Obligator rolls retain every damage value through the final max', () => {
     const monster = { ...getTestMonsterById(415), size: 3 };
     const weapon = findEquipment('The Obligator');
-    const setup = (name: 'Smash' | 'Thrust') => getTestPlayer(monster, {
+    const setup = (name: 'Smash' | 'Thrust', strengthBonus: number) => getTestPlayer(monster, {
       equipment: { weapon },
-      bonuses: { str: 288 },
+      bonuses: { str: strengthBonus },
       style: { name, type: 'crush', stance: 'Aggressive' },
     });
-    const baseMax = calculatePlayerVsNpc(monster, setup('Smash')).maxHit;
-    const thrust = calculatePlayerVsNpc(monster, setup('Thrust'));
+    const baseMax = calculatePlayerVsNpc(monster, setup('Smash', 288)).maxHit;
+    const thrust = calculatePlayerVsNpc(monster, setup('Thrust', 288));
     expect(baseMax).toBe(61);
     expect(thrust.maxHit).toBe(85);
-    expect(thrust.dist.asHistogram()[76].value).toBe(0);
+    expect(thrust.dist.asHistogram()[76].value).toBeGreaterThan(0);
+
+    const lowerBase = calculatePlayerVsNpc(monster, setup('Smash', 191)).maxHit;
+    const lowerThrust = calculatePlayerVsNpc(monster, setup('Thrust', 191));
+    expect(lowerBase).toBe(44);
+    expect(lowerThrust.maxHit).toBe(61);
+    const histogram = lowerThrust.dist.asHistogram();
+    for (let damage = 1; damage <= 61; damage++) {
+      expect(histogram[damage].value).toBeGreaterThan(0);
+    }
   });
 
   test('Zorya has a 3 tick normal attack and faster empowered follow-ups', () => {
