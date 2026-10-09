@@ -887,11 +887,17 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.opts.usingSpecialAttack) {
       if (this.isWearingAccursedSceptre()) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
+      } else if (this.wearing("Zorya's Tome")) {
+        attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [5, 2]);
       } else if (this.wearing('Volatile Nightmare staff')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
       } else if (this.wearing('Eye of Ayak')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [2, 1]);
       }
+    }
+
+    if (this.wearing("Zorya's Tome") && this.player.buffs.zoryaEmpowered && !this.opts.usingSpecialAttack) {
+      attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [5, 2]);
     }
 
     const spellement = this.getSpellement();
@@ -946,6 +952,8 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) + 1);
     } else if (this.wearing('Eye of Ayak')) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) - 6);
+    } else if (this.wearing("Zorya's Tome")) {
+      maxHit = 18;
     } else if (this.wearing('Warped sceptre')) {
       maxHit = Math.max(1, Math.trunc((8 * magicLevel + 96) / 37));
     } else if (this.wearing('Bone staff')) {
@@ -984,6 +992,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.opts.usingSpecialAttack && this.wearing('Eye of Ayak')) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [13, 10]);
     }
+    if (this.wearing("Zorya's Tome") && (this.opts.usingSpecialAttack || buffs.zoryaEmpowered)) {
+      maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [8, 5]);
+    }
 
     if (this.wearing('Chaos gauntlets') && spell?.name.toLowerCase()
       .includes('bolt')) {
@@ -993,6 +1004,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       maxHit += 10;
     }
     if (this.hasMatchingElementalAmulet()) {
+      maxHit += 2;
+    }
+    if (spell?.element && buffs.elementalFragments?.[spell.element]) {
       maxHit += 2;
     }
 
@@ -1631,6 +1645,21 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       dist = new AttackDistribution(hits);
     }
 
+    if (this.isUsingMeleeStyle() && this.wearing(['The Obligator', 'The Breaker']) && this.player.style.name === 'Thrust') {
+      const crush = this.monster.defensive.crush;
+      const rolls = 2 + Number(this.monster.defensive.stab > crush) + Number(this.monster.defensive.slash > crush);
+      const sizeBonus = Math.min(Math.max(this.monster.size - 1, 0), 2);
+      const thrustMax = Math.trunc(max * (100 + 20 * sizeBonus) / 100);
+      const hitRange = thrustMax - min + 1;
+      const hits = [new WeightedHit(1 - firstHitAcc, [Hitsplat.INACCURATE])];
+      for (let damage = min; damage <= thrustMax; damage++) {
+        const high = ((damage - min + 1) / hitRange) ** rolls;
+        const low = ((damage - min) / hitRange) ** rolls;
+        hits.push(new WeightedHit(firstHitAcc * (high - low), [new Hitsplat(damage)]));
+      }
+      dist = new AttackDistribution([new HitDistribution(hits)]);
+    }
+
     if (this.isUsingMeleeStyle() && this.wearing('Dual macuahuitl')) {
       let firstMax = Math.trunc(max / 2);
       const secondMax = max - firstMax;
@@ -1802,17 +1831,18 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       spec: this.opts.usingSpecialAttack,
       kandarinDiary: this.player.buffs.kandarinDiary,
       monster: this.monster,
+      procChanceMultiplier: this.wearing('Ascension crossbows') ? 0.5 : 1,
     };
     if (this.player.style.type === 'ranged' && this.player.equipment.weapon?.category === EquipmentCategory.CROSSBOW) {
       if (this.wearing(['Opal bolts (e)', 'Opal dragon bolts (e)'])) {
         dist = dist.transform(opalBolts(boltContext));
       } else if (this.wearing(['Pearl bolts (e)', 'Pearl dragon bolts (e)'])) {
         dist = dist.transform(pearlBolts(boltContext));
-      } else if (this.wearing(['Diamond bolts (e)', 'Diamond dragon bolts (e)'])) {
+      } else if (this.wearing(['Diamond bolts (e)', 'Diamond dragon bolts (e)', 'Diamond ascension bolts (e)'])) {
         dist = dist.transform(diamondBolts(boltContext));
       } else if (this.wearing(['Dragonstone bolts (e)', 'Dragonstone dragon bolts (e)'])) {
         dist = dist.transform(dragonstoneBolts(boltContext));
-      } else if (this.wearing(['Onyx bolts (e)', 'Onyx dragon bolts (e)']) && !mattrs.includes(MonsterAttribute.UNDEAD)) {
+      } else if (this.wearing(['Onyx bolts (e)', 'Onyx dragon bolts (e)', 'Onyx ascension bolts (e)']) && !mattrs.includes(MonsterAttribute.UNDEAD)) {
         dist = dist.transform(onyxBolts(boltContext));
       }
     }

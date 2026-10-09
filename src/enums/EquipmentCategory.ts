@@ -10,6 +10,7 @@ export enum EquipmentCategory {
   BLADED_STAFF = 'Bladed Staff',
   BLASTER = 'Blaster',
   BLUDGEON = 'Bludgeon',
+  BREAKER = 'Breaker',
   BLUNT = 'Blunt',
   BOW = 'Bow',
   BULWARK = 'Bulwark',

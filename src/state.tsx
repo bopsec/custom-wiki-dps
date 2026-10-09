@@ -143,6 +143,8 @@ export const generateEmptyPlayer = (name?: string): Player => ({
     baAttackerLevel: 0,
     chinchompaDistance: 4, // 4 tiles is the optimal range for "medium fuse" (rapid), which is the default selected stance
     usingSunfireRunes: false,
+    elementalFragments: {},
+    zoryaEmpowered: false,
   },
   spell: null,
 });
@@ -155,6 +157,11 @@ export const parseLoadoutsFromImportedData = (data: ImportableData) => data.load
       let item: EquipmentPiece | undefined;
       if (Object.hasOwn(v, 'id')) {
         item = availableEquipment.find((eq) => eq.id === v.id);
+        // Provisional raid rewards use negative IDs until the wiki assigns real ones.
+        // Resolve older saved loadouts by name after an upstream equipment refresh.
+        if (!item && typeof v.id === 'number' && v.id < 0) {
+          item = availableEquipment.find((eq) => eq.name === v.name && eq.slot === v.slot);
+        }
         if (item) {
           // include the hidden itemVars inputs that are not present on the availableEquipment store
           if (Object.hasOwn(v, 'itemVars')) {

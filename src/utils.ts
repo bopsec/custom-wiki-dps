@@ -523,6 +523,10 @@ export const CombatStyleMap: { [k in EquipmentCategory]: { [k: string]: { image:
     Pound: { image: '255' },
     Pummel: { image: '256' },
   },
+  [EquipmentCategory.BREAKER]: {
+    Thrust: { image: '255' },
+    Smash: { image: '253' },
+  },
   [EquipmentCategory.BLUNT]: {
     Block: { image: '253' },
     Pound: { image: '255' },
@@ -727,6 +731,12 @@ export const getCombatStylesForCategory = (style: EquipmentCategory): PlayerComb
       ret = [
         { name: 'Pound', type: 'crush', stance: 'Aggressive' },
         { name: 'Pummel', type: 'crush', stance: 'Aggressive' },
+        { name: 'Smash', type: 'crush', stance: 'Aggressive' },
+      ];
+      break;
+    case EquipmentCategory.BREAKER:
+      ret = [
+        { name: 'Thrust', type: 'crush', stance: 'Aggressive' },
         { name: 'Smash', type: 'crush', stance: 'Aggressive' },
       ];
       break;

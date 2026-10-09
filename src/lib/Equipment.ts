@@ -13,7 +13,9 @@ import {
   TOMBS_OF_AMASCUT_MONSTER_IDS,
 } from '@/lib/constants';
 import { sum } from 'd3-array';
+import { EquipmentCategory } from '@/enums/EquipmentCategory';
 import equipment from '../../cdn/json/equipment.json';
+import provisionalEquipment from '../../scripts/manual_equipment.json';
 import generatedEquipmentAliases from './EquipmentAliases';
 
 export type EquipmentBonuses = Pick<Player, 'bonuses' | 'offensive' | 'defensive' | 'attackSpeed'>;
@@ -21,7 +23,16 @@ export type EquipmentBonuses = Pick<Player, 'bonuses' | 'offensive' | 'defensive
 /**
  * All available equipment that a player can equip.
  */
-export const availableEquipment = equipment as EquipmentPiece[];
+// Provisional rewards live outside the generated wiki snapshot. Prefer the wiki record as soon
+// as it exists, so regenerating equipment.json never leaves two copies in the picker.
+export const availableEquipment = [
+  ...(equipment as EquipmentPiece[]).map((item) => (item.name === 'The Obligator'
+    ? { ...item, category: EquipmentCategory.BREAKER }
+    : item)),
+  ...(provisionalEquipment as EquipmentPiece[]).filter((item) => !equipment.some(
+    (upstream) => upstream.name.toLowerCase() === item.name.toLowerCase() && upstream.slot === item.slot,
+  )),
+];
 
 export const noStatExceptions = [
   'Castle wars bracelet',
@@ -166,6 +177,13 @@ const ammoForRangedWeapons: { [weapon: number]: number[] } = {
   33245: commonAmmoCategories().bow_t60, // Nature's recurve
 };
 
+const ascensionCrossbows = availableEquipment.find((item) => item.name === 'Ascension crossbows');
+if (ascensionCrossbows) {
+  ammoForRangedWeapons[ascensionCrossbows.id] = availableEquipment
+    .filter((item) => ['Ascension bolts', 'Diamond ascension bolts (e)', 'Onyx ascension bolts (e)'].includes(item.name))
+    .map((item) => item.id);
+}
+
 export enum AmmoApplicability {
   /** Include the ammo slot bonuses in the equipment stats */
   INCLUDED,
@@ -251,6 +269,13 @@ export const getCanonicalEquipment = (inputEq: PlayerEquipment) => {
  */
 export const calculateAttackSpeed = (player: Player, monster: Monster): number => {
   let attackSpeed = player.equipment.weapon?.speed || DEFAULT_ATTACK_SPEED;
+
+  if (player.equipment.weapon?.name === 'The Obligator' && player.style.name === 'Smash') {
+    attackSpeed = 3;
+  }
+  if (player.equipment.weapon?.name === "Zorya's Tome" && player.buffs.zoryaEmpowered) {
+    attackSpeed = 2;
+  }
 
   if (player.style.type === 'ranged' && player.style.stance === 'Rapid') {
     attackSpeed -= 1;
@@ -442,6 +467,7 @@ export const WEAPON_SPEC_COSTS: { [canonicalName: string]: number } = {
   'Eye of Ayak': 50,
   'Crimson kisten': 50,
   'Sunspear': 50,
+  "Zorya's Tome": 50,
 
   'Magic shortbow': 55,
   'Dark bow': 55,

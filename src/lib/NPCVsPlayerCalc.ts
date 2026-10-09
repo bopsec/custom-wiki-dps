@@ -101,6 +101,13 @@ export default class NPCVsPlayerCalc extends BaseCalc {
       ]);
     }
 
+    if (this.wearing('Rondache') && this.monster.style !== null) {
+      dist = dist.transform(
+        (hit) => HitDistribution.single(1, [new Hitsplat(Math.max(0, hit.damage - 2), hit.accurate)]),
+        { transformInaccurate: false },
+      );
+    }
+
     // There's some monsters that can hit through prayers, but let's worry about that later
     // const style = this.monster.style || '';
     // if (

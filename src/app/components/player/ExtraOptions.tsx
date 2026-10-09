@@ -9,7 +9,10 @@ import soulreaper_axe from '@/public/img/misc/soulreaper_axe.png';
 import ba_attacker from '@/public/img/misc/ba_attacker.webp';
 import chinchompa from '@/public/img/misc/chinchompa.png';
 import NumberInput from '@/app/components/generic/NumberInput';
+import { Spellement } from '@/types/Spell';
 import Toggle from '../generic/Toggle';
+
+const ELEMENTS: Spellement[] = ['air', 'water', 'earth', 'fire'];
 
 const ExtraOptions: React.FC = observer(() => {
   const store = useStore();
@@ -110,6 +113,19 @@ const ExtraOptions: React.FC = observer(() => {
               </span>
             </>
           )}
+        />
+        {ELEMENTS.map((element) => (
+          <Toggle
+            key={element}
+            checked={!!player.buffs.elementalFragments?.[element]}
+            setChecked={(checked) => store.updatePlayer({ buffs: { elementalFragments: { [element]: checked } } })}
+            label={`${element[0].toUpperCase()}${element.slice(1)} fragment (+2 elemental spell max hit)`}
+          />
+        ))}
+        <Toggle
+          checked={!!player.buffs.zoryaEmpowered}
+          setChecked={(checked) => store.updatePlayer({ buffs: { zoryaEmpowered: checked } })}
+          label="Zorya's Tome empowered (next three attacks after a successful spec)"
         />
         <div className="w-full">
           <NumberInput

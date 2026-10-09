@@ -257,7 +257,9 @@ def main():
     # this should ONLY be used for upcoming items that are not yet released
     with open('manual_equipment.json', 'r') as f:
         manual_data = json.load(f)
-        new_data = new_data + manual_data
+        upstream_names = {(item['name'].lower(), item['slot']) for item in new_data}
+        new_data += [item for item in manual_data
+                     if (item['name'].lower(), item['slot']) not in upstream_names]
 
     print('Total equipment: ' + str(len(new_data)))
     new_data.sort(key=lambda d: d.get('name'))

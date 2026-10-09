@@ -1,32 +1,249 @@
 [
-	{
-		"name": "Snail shell",
-		"id": 7800,
-		"version": "",
-		"slot": "feet",
-		"image": "Snail shell.png",
-		"speed": 0,
-		"category": "",
-		"bonuses": {
-			"str": 0,
-			"ranged_str": 0,
-			"magic_str": 0,
-			"prayer": 0
-		},
-		"offensive": {
-			"stab": 0,
-			"slash": 0,
-			"crush": 0,
-			"magic": 0,
-			"ranged": 0
-		},
-		"defensive": {
-			"stab": 0,
-			"slash": 0,
-			"crush": 0,
-			"magic": 0,
-			"ranged": 0
-		},
-		"isTwoHanded": false
-	}
+    {
+        "name":  "Snail shell",
+        "id":  7800,
+        "version":  "",
+        "slot":  "feet",
+        "image":  "Snail shell.png",
+        "speed":  0,
+        "category":  "",
+        "bonuses":  {
+                        "str":  0,
+                        "ranged_str":  0,
+                        "magic_str":  0,
+                        "prayer":  0
+                    },
+        "offensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "defensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "isTwoHanded":  false
+    },
+    {
+        "name":  "Rondache",
+        "id":  -40001,
+        "weight":  0,
+        "version":  "",
+        "slot":  "shield",
+        "image":  "",
+        "speed":  0,
+        "category":  "",
+        "bonuses":  {
+                        "str":  8,
+                        "ranged_str":  0,
+                        "magic_str":  0,
+                        "prayer":  0
+                    },
+        "offensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  -5,
+                          "ranged":  -3
+                      },
+        "defensive":  {
+                          "stab":  35,
+                          "slash":  41,
+                          "crush":  38,
+                          "magic":  -6,
+                          "ranged":  55
+                      },
+        "isTwoHanded":  false
+    },
+    {
+        "name":  "Zorya\u0027s Tome",
+        "id":  -40002,
+        "weight":  0,
+        "version":  "",
+        "slot":  "weapon",
+        "image":  "",
+        "speed":  3,
+        "category":  "Powered Staff",
+        "bonuses":  {
+                        "str":  0,
+                        "ranged_str":  0,
+                        "magic_str":  150,
+                        "prayer":  2
+                    },
+        "offensive":  {
+                          "stab":  1,
+                          "slash":  5,
+                          "crush":  5,
+                          "magic":  45,
+                          "ranged":  0
+                      },
+        "defensive":  {
+                          "stab":  1,
+                          "slash":  5,
+                          "crush":  5,
+                          "magic":  10,
+                          "ranged":  0
+                      },
+        "isTwoHanded":  true
+    },
+    {
+        "name":  "The Obligator",
+        "id":  -40003,
+        "weight":  0,
+        "version":  "",
+        "slot":  "weapon",
+        "image":  "",
+        "speed":  5,
+        "category":  "Breaker",
+        "bonuses":  {
+                        "str":  40,
+                        "ranged_str":  0,
+                        "magic_str":  0,
+                        "prayer":  3
+                    },
+        "offensive":  {
+                          "stab":  22,
+                          "slash":  -8,
+                          "crush":  120,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "defensive":  {
+                          "stab":  0,
+                          "slash":  16,
+                          "crush":  0,
+                          "magic":  3,
+                          "ranged":  8
+                      },
+        "isTwoHanded":  true
+    },
+    {
+        "name":  "Ascension crossbows",
+        "id":  -40004,
+        "weight":  0,
+        "version":  "",
+        "slot":  "weapon",
+        "image":  "",
+        "speed":  3,
+        "category":  "Crossbow",
+        "bonuses":  {
+                        "str":  0,
+                        "ranged_str":  0,
+                        "magic_str":  0,
+                        "prayer":  0
+                    },
+        "offensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  3,
+                          "ranged":  34
+                      },
+        "defensive":  {
+                          "stab":  -7,
+                          "slash":  -5,
+                          "crush":  0,
+                          "magic":  10,
+                          "ranged":  0
+                      },
+        "isTwoHanded":  true
+    },
+    {
+        "name":  "Ascension bolts",
+        "id":  -40005,
+        "weight":  0,
+        "version":  "",
+        "slot":  "ammo",
+        "image":  "",
+        "speed":  0,
+        "category":  "",
+        "bonuses":  {
+                        "str":  0,
+                        "ranged_str":  53,
+                        "magic_str":  0,
+                        "prayer":  0
+                    },
+        "offensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "defensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "isTwoHanded":  false
+    },
+    {
+        "name":  "Diamond ascension bolts (e)",
+        "id":  -40006,
+        "weight":  0,
+        "version":  "",
+        "slot":  "ammo",
+        "image":  "",
+        "speed":  0,
+        "category":  "",
+        "bonuses":  {
+                        "str":  0,
+                        "ranged_str":  53,
+                        "magic_str":  0,
+                        "prayer":  0
+                    },
+        "offensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "defensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "isTwoHanded":  false
+    },
+    {
+        "name":  "Onyx ascension bolts (e)",
+        "id":  -40007,
+        "weight":  0,
+        "version":  "",
+        "slot":  "ammo",
+        "image":  "",
+        "speed":  0,
+        "category":  "",
+        "bonuses":  {
+                        "str":  0,
+                        "ranged_str":  53,
+                        "magic_str":  0,
+                        "prayer":  0
+                    },
+        "offensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "defensive":  {
+                          "stab":  0,
+                          "slash":  0,
+                          "crush":  0,
+                          "magic":  0,
+                          "ranged":  0
+                      },
+        "isTwoHanded":  false
+    }
 ]

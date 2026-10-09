@@ -13,6 +13,7 @@ export interface BoltContext {
   spec: boolean;
   kandarinDiary: boolean;
   monster: Monster;
+  procChanceMultiplier?: number;
 }
 export type BoltTransformer = (ctx: BoltContext) => HitTransformer;
 
@@ -50,7 +51,7 @@ export const pearlBolts: BoltTransformer = (ctx) => {
 
 export const diamondBolts: BoltTransformer = (ctx) => {
   const { maxHit, zcb, spec } = ctx;
-  const chance = 0.1 * kandarinFactor(ctx);
+  const chance = 0.1 * kandarinFactor(ctx) * (ctx.procChanceMultiplier ?? 1);
   const effectMax = Math.trunc(maxHit * (zcb ? 126 : 115) / 100);
 
   const effectDist = HitDistribution.linear(1.0, 0, effectMax);
@@ -89,7 +90,7 @@ export const onyxBolts: BoltTransformer = (ctx) => {
     return (h) => new HitDistribution([new WeightedHit(1.0, [h])]);
   }
 
-  const chance = 0.11 * kandarinFactor(ctx);
+  const chance = 0.11 * kandarinFactor(ctx) * (ctx.procChanceMultiplier ?? 1);
   const effectMax = Math.trunc(maxHit * (zcb ? 132 : 120) / 100);
 
   const effectDist = HitDistribution.linear(1.0, 0, effectMax);
