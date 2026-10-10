@@ -14,8 +14,11 @@ Implemented in the calculator:
 - Elemental Fragments: four independent toggles in Extra Options add 2 to the matching
   elemental spell's base max hit.
 - Rondache: proposed combat stats and 2 flat damage reduction against typed incoming hits.
-- Zorya's Tome: powered staff stats, 18 base max hit, 3 tick normal attack, special attack
-  accuracy and damage, and an Extra Options toggle for its three faster empowered follow-ups.
+- Zorya's Tome: powered staff stats and a base max hit of `floor(Magic level / 3) - 10`
+  (minimum 1), before the Tome's 15% Magic damage bonus. Its special attack groups
+  the initial hit and three independently rolled follow-ups into one four-hit result.
+  The follow-ups occur only if the initial hit lands, and expected attack time includes
+  their two-tick intervals.
 - Zeal: 25% Attack, 28% Strength, 25% Defence and Piety's drain rate. The calculator does not
   enforce prayer unlock requirements.
 - Ascension crossbows: heavy ranged, rapid 2 tick attacks, dedicated regular, diamond, and
@@ -26,7 +29,7 @@ Implemented in the calculator:
 
 The current single-target DPS model cannot represent the Obligator hitting separate NPCs
 in a line. Rondache Shield Bash and its charge accumulation are also outside the current
-weapon-special model, which only calculates specials from the weapon slot. Zorya's empowered
-toggle represents the three attacks after a successful special; it does not automatically
-model the chance of entering that state across an entire fight. Update these calculations
+weapon-special model, which only calculates specials from the weapon slot. Zorya's
+grouped special assumes all four hits target the same NPC; the in-game follow-ups can
+be aimed at separate targets. Update these calculations
 when final in-game mechanics are published.

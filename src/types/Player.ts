@@ -144,7 +144,6 @@ export interface Player extends EquipmentStats {
      */
     usingSunfireRunes: boolean;
     elementalFragments?: Partial<Record<Spellement, boolean>>;
-    zoryaEmpowered?: boolean;
   };
   spell: Spell | null;
 }

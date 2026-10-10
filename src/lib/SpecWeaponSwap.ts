@@ -248,8 +248,56 @@ const histogramFromCalc = (calc: PlayerVsNPCCalc): Map<number, number> => {
 };
 
 export const getSpecSwapAttackOutcomes = (calc: PlayerVsNPCCalc): SpecSwapAttackOutcome[] => {
+  const distribution = calc.getDistribution();
+  if (distribution.followUpsRequireFirstHit) {
+    // Keep the first-hit gate while combining damage and successful-hit counts.
+    // This avoids expanding every four-hit combination just to rank spec setups.
+    const outcomes = new Map<string, AttackOutcome>();
+    const addOutcome = (damage: number, successfulHits: number, probability: number) => {
+      const key = `${damage}:${successfulHits}`;
+      const existing = outcomes.get(key);
+      if (existing) {
+        existing.probability += probability;
+      } else {
+        outcomes.set(key, { damage, successfulHits, probability });
+      }
+    };
+    distribution.dists[0].hits.forEach((first) => {
+      if (!first.anyAccurate()) {
+        addOutcome(first.getSum(), 0, first.probability);
+        return;
+      }
+      let partial = new Map<string, AttackOutcome>();
+      partial.set(`${first.getSum()}:1`, {
+        damage: first.getSum(),
+        successfulHits: 1,
+        probability: first.probability,
+      });
+      distribution.dists.slice(1).forEach((followUp) => {
+        const next = new Map<string, AttackOutcome>();
+        partial.forEach((state) => {
+          followUp.hits.forEach((hit) => {
+            const damage = state.damage + hit.getSum();
+            const successfulHits = state.successfulHits + Number(hit.anyAccurate());
+            const probability = state.probability * hit.probability;
+            const key = `${damage}:${successfulHits}`;
+            const existing = next.get(key);
+            if (existing) {
+              existing.probability += probability;
+            } else {
+              next.set(key, { damage, successfulHits, probability });
+            }
+          });
+        });
+        partial = next;
+      });
+      partial.forEach((state) => addOutcome(state.damage, state.successfulHits, state.probability));
+    });
+    return [...outcomes.values()];
+  }
+
   const outcomes = new Map<string, AttackOutcome>();
-  calc.getDistribution().zipped.hits.forEach((hit) => {
+  distribution.zipped.hits.forEach((hit) => {
     const damage = hit.getSum();
     const successfulHits = hit.hitsplats.filter((hitsplat) => hitsplat.accurate).length;
     const key = `${damage}:${successfulHits}`;

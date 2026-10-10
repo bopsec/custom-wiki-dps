@@ -1,6 +1,8 @@
 import { describe, expect, test } from '@jest/globals';
 import { Prayer } from '@/enums/Prayer';
 import { ammoApplicability, AmmoApplicability } from '@/lib/Equipment';
+import PlayerVsNPCCalc from '@/lib/PlayerVsNPCCalc';
+import { getSpecSwapAttackOutcomes } from '@/lib/SpecWeaponSwap';
 import {
   calculateNpcVsPlayer, calculatePlayerVsNpc, findEquipment, findSpell,
   getTestMonsterById, getTestPlayer,
@@ -81,18 +83,46 @@ describe('Fractured Archive rewards', () => {
     }
   });
 
-  test('Zorya has a 3 tick normal attack and faster empowered follow-ups', () => {
+  test('Zorya base hit scales with Magic level before its damage bonuses', () => {
     const weapon = findEquipment("Zorya's Tome");
-    const normal = getTestPlayer(target, { equipment: { weapon } });
-    const empowered = getTestPlayer(target, {
-      equipment: { weapon },
-      buffs: { zoryaEmpowered: true },
-    });
-    expect(normal.attackSpeed).toBe(3);
-    expect(empowered.attackSpeed).toBe(2);
-    expect(calculatePlayerVsNpc(target, empowered).dps).toBeGreaterThan(calculatePlayerVsNpc(target, normal).dps);
-    expect(calculatePlayerVsNpc(target, normal, { usingSpecialAttack: true }).maxHit)
-      .toBeGreaterThan(calculatePlayerVsNpc(target, normal).maxHit);
+    for (const [magic, normalMax, specMax] of [
+      [80, 18, 112],
+      [90, 23, 144],
+      [99, 26, 164],
+    ]) {
+      const player = getTestPlayer(target, {
+        equipment: { weapon },
+        skills: { magic },
+      });
+      expect(calculatePlayerVsNpc(target, player).maxHit).toBe(normalMax);
+      expect(calculatePlayerVsNpc(target, player, { usingSpecialAttack: true }).maxHit)
+        .toBe(specMax);
+    }
+  });
+
+  test('Zorya special groups four independent rolls gated by its first hit', () => {
+    const weapon = findEquipment("Zorya's Tome");
+    const player = getTestPlayer(target, { equipment: { weapon } });
+    const normal = new PlayerVsNPCCalc(player, target);
+    const spec = new PlayerVsNPCCalc(player, target, { usingSpecialAttack: true });
+    const accuracy = spec.getHitChance();
+    const singleHitDamage = spec.getDistribution().dists[0].expectedHit();
+    const outcomes = getSpecSwapAttackOutcomes(spec);
+
+    expect(normal.getAttackSpeed()).toBe(3);
+    expect(normal.getSpecCalc()).not.toBeNull();
+    expect(normal.getDistribution().dists).toHaveLength(1);
+    expect(spec.getDistribution().dists).toHaveLength(4);
+    expect(spec.getDistribution().followUpsRequireFirstHit).toBe(true);
+    expect(spec.getMax()).toBe(spec.getDistribution().dists[0].getMax() * 4);
+    expect(spec.getExpectedDamage()).toBeCloseTo(singleHitDamage * (1 + 3 * accuracy));
+    expect(spec.getDistribution().singleHitsplat.expectedHit()).toBeCloseTo(spec.getExpectedDamage());
+    expect(spec.getExpectedAttackSpeed()).toBeCloseTo(3 + 6 * accuracy);
+    expect(outcomes.filter((outcome) => outcome.successfulHits === 0)
+      .reduce((sum, outcome) => sum + outcome.probability, 0)).toBeCloseTo(1 - accuracy);
+    expect(outcomes.filter((outcome) => outcome.successfulHits === 4)
+      .reduce((sum, outcome) => sum + outcome.probability, 0)).toBeCloseTo(accuracy ** 4);
+    expect(outcomes.reduce((sum, outcome) => sum + outcome.probability, 0)).toBeCloseTo(1);
   });
 
   test('Ascension bolts are required and add their ranged strength', () => {

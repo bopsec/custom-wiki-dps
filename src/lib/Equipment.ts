@@ -273,9 +273,6 @@ export const calculateAttackSpeed = (player: Player, monster: Monster): number =
   if (player.equipment.weapon?.name === 'The Obligator' && player.style.name === 'Smash') {
     attackSpeed = 3;
   }
-  if (player.equipment.weapon?.name === "Zorya's Tome" && player.buffs.zoryaEmpowered) {
-    attackSpeed = 2;
-  }
 
   if (player.style.type === 'ranged' && player.style.stance === 'Rapid') {
     attackSpeed -= 1;

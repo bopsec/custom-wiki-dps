@@ -896,10 +896,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     }
 
-    if (this.wearing("Zorya's Tome") && this.player.buffs.zoryaEmpowered && !this.opts.usingSpecialAttack) {
-      attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [5, 2]);
-    }
-
     const spellement = this.getSpellement();
     const weakness = this.getMonsterWeakness();
     if (spellement && spellement === weakness?.element) {
@@ -953,7 +949,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     } else if (this.wearing('Eye of Ayak')) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) - 6);
     } else if (this.wearing("Zorya's Tome")) {
-      maxHit = 18;
+      maxHit = Math.max(1, Math.trunc(magicLevel / 3) - 10);
     } else if (this.wearing('Warped sceptre')) {
       maxHit = Math.max(1, Math.trunc((8 * magicLevel + 96) / 37));
     } else if (this.wearing('Bone staff')) {
@@ -992,7 +988,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.opts.usingSpecialAttack && this.wearing('Eye of Ayak')) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [13, 10]);
     }
-    if (this.wearing("Zorya's Tome") && (this.opts.usingSpecialAttack || buffs.zoryaEmpowered)) {
+    if (this.wearing("Zorya's Tome") && this.opts.usingSpecialAttack) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [8, 5]);
     }
 
@@ -1558,6 +1554,12 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       if (hitCount !== 1) {
         dist = new AttackDistribution(Array(hitCount).fill(standardHitDist));
       }
+    }
+
+    if (this.opts.usingSpecialAttack && this.wearing("Zorya's Tome")) {
+      // The first hit unlocks three independently rolled, empowered follow-up hits.
+      // Group their damage into one special-attack distribution for comparison.
+      dist = new AttackDistribution(Array(4).fill(standardHitDist), true);
     }
 
     if (this.opts.usingSpecialAttack && this.wearing('Abyssal dagger')) {
@@ -2146,6 +2148,14 @@ export default class PlayerVsNPCCalc extends BaseCalc {
   }
 
   public getExpectedAttackSpeed() {
+    if (this.opts.usingSpecialAttack && this.wearing("Zorya's Tome")) {
+      const firstHitChance = sum(
+        this.getDistribution().dists[0].hits.filter((hit) => hit.anyAccurate()),
+        (hit) => hit.probability,
+      );
+      return this.getAttackSpeed() + 6 * firstHitChance;
+    }
+
     if (this.isWearingBloodMoonSet()) {
       const acc = this.getHitChance();
       const procChance = this.opts.usingSpecialAttack
@@ -2284,6 +2294,22 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     return () => [[1.0, baseSpeed]];
   }
 
+  private getDelayedHitDistribution(preserveHitsplats = false): DelayedHit[] {
+    const dist = this.getDistribution();
+    if (dist.followUpsRequireFirstHit) {
+      const followUpSum = dist.dists.slice(1)
+        .reduce((previous, next) => previous.zip(next).cumulative());
+      return dist.dists[0].hits.flatMap((first): DelayedHit[] => (
+        first.anyAccurate()
+          ? new HitDistribution([first]).zip(followUpSum).cumulative().hits
+            .map((hit) => [hit, this.getAttackSpeed() + 6])
+          : [[first, this.getAttackSpeed()]]
+      ));
+    }
+    return (preserveHitsplats ? dist.zipped : dist.singleHitsplat)
+      .withProbabilisticDelays(this.getWeaponDelayProvider());
+  }
+
   /**
    * Returns a distribution of times-to-kill (in ticks) to probabilities.
    * Because the result will not be densely populated (unless attack speed is 1),
@@ -2299,9 +2325,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     const speed = this.getAttackSpeed();
     const iterMax = TTK_DIST_MAX_ITER_ROUNDS * speed;
 
-    const playerDist = this.getDistribution()
-      .singleHitsplat
-      .withProbabilisticDelays(this.getWeaponDelayProvider());
+    const playerDist = this.getDelayedHitDistribution();
 
     // dist attack-on-specific-tick probabilities
     // todo thralls, append here
@@ -2421,7 +2445,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }),
     );
 
-    return subCalc.getDistribution().zipped.withProbabilisticDelays(this.getWeaponDelayProvider());
+    return subCalc.getDelayedHitDistribution(true);
   }
 
   // a computational shortcut for internal class use only

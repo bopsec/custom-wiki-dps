@@ -122,11 +122,6 @@ const ExtraOptions: React.FC = observer(() => {
             label={`${element[0].toUpperCase()}${element.slice(1)} fragment (+2 elemental spell max hit)`}
           />
         ))}
-        <Toggle
-          checked={!!player.buffs.zoryaEmpowered}
-          setChecked={(checked) => store.updatePlayer({ buffs: { zoryaEmpowered: checked } })}
-          label="Zorya's Tome empowered (next three attacks after a successful spec)"
-        />
         <div className="w-full">
           <NumberInput
             className="form-control w-12"
