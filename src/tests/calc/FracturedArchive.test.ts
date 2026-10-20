@@ -27,6 +27,7 @@ describe('Fractured Archive rewards', () => {
       16684: [125, 230, 155],
       16674: [50, 135, 50],
       16675: [100, 110, 80],
+      16677: [250, 250, 250],
     };
     const weaknesses: Record<number, { element: string, severity: number }> = {
       16659: { element: 'fire', severity: 80 },

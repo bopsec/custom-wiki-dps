@@ -14,7 +14,7 @@ The Fractured Archive NPCs supplied in the combat-stat table live in
 heavy ranged defence bonuses are provisional values of 50, except both Archive Guardian
 variants (75/120/50), Bork (80/50/5), the Smorks (80/150/80), Dreadnoth the Jellied
 (100/80/80), Xarth (125/230/155), Ocellus phase 1 (50/135/50), and Ocellus phase 2
-(100/110/80). Both Archive Guardians and Jelly have 80% fire
+(100/110/80), and Ocellus phase 3 (250/250/250). Both Archive Guardians and Jelly have 80% fire
 weakness; Bork has 40% earth weakness, the Smorks have 85% earth weakness, and Xarth has
 85% water weakness. Unlisted attack styles,
 maximum hits, melee attack bonuses, and attack speeds remain unknown; an attack speed

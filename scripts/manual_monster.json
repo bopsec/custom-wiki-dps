@@ -1054,9 +1054,9 @@
       "flat_armour": 0,
       "crush": 30,
       "magic": 200,
-      "heavy": 50,
-      "standard": 50,
-      "light": 50,
+      "heavy": 250,
+      "standard": 250,
+      "light": 250,
       "slash": 100,
       "stab": 150
     },
