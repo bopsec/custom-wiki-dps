@@ -135086,9 +135086,9 @@
       "flat_armour": 0,
       "crush": 35,
       "magic": 200,
-      "heavy": 50,
-      "standard": 50,
-      "light": 50,
+      "heavy": 320,
+      "standard": 370,
+      "light": 445,
       "slash": 90,
       "stab": 150
     },
@@ -135097,7 +135097,10 @@
       "burn": null
     },
     "is_slayer_monster": false,
-    "weakness": null
+    "weakness": {
+      "element": "earth",
+      "severity": 25
+    }
   },
   {
     "id": 16653,
@@ -135261,9 +135264,9 @@
       "flat_armour": 0,
       "crush": 15,
       "magic": 30,
-      "heavy": 50,
-      "standard": 50,
-      "light": 50,
+      "heavy": 140,
+      "standard": 120,
+      "light": 60,
       "slash": 110,
       "stab": 20
     },

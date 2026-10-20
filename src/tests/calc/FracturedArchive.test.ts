@@ -23,7 +23,9 @@ describe('Fractured Archive rewards', () => {
       16660: [75, 120, 50],
       16640: [80, 50, 5],
       16641: [80, 150, 80],
+      16652: [445, 370, 320],
       16665: [100, 80, 80],
+      16667: [60, 120, 140],
       16684: [125, 230, 155],
       16674: [50, 135, 50],
       16675: [100, 110, 80],
@@ -35,6 +37,7 @@ describe('Fractured Archive rewards', () => {
       16666: { element: 'fire', severity: 80 },
       16640: { element: 'earth', severity: 40 },
       16641: { element: 'earth', severity: 85 },
+      16652: { element: 'earth', severity: 25 },
       16684: { element: 'water', severity: 85 },
     };
     const monsters = getMonsters();

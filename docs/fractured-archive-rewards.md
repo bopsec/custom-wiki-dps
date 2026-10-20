@@ -11,12 +11,23 @@ concepts, so wiki item sprites and images will replace them with the upstream re
 
 The Fractured Archive NPCs supplied in the combat-stat table live in
 `scripts/manual_monster.json` and `cdn/json/monsters.json`. Their light, standard, and
-heavy ranged defence bonuses are provisional values of 50, except both Archive Guardian
-variants (75/120/50), Bork (80/50/5), the Smorks (80/150/80), Dreadnoth the Jellied
-(100/80/80), Xarth (125/230/155), Ocellus phase 1 (50/135/50), and Ocellus phase 2
-(100/110/80), and Ocellus phase 3 (250/250/250). Both Archive Guardians and Jelly have 80% fire
-weakness; Bork has 40% earth weakness, the Smorks have 85% earth weakness, and Xarth has
-85% water weakness. Unlisted attack styles,
+heavy ranged defence bonuses default to provisional values of 50. Known exceptions are:
+
+| NPC | Light | Standard | Heavy | Elemental weakness |
+| --- | ---: | ---: | ---: | --- |
+| Archive Guardian (both variants) | 75 | 120 | 50 | Fire 80% |
+| Bork | 80 | 50 | 5 | Earth 40% |
+| The Smorks | 80 | 150 | 80 | Earth 85% |
+| Ezekiel | 445 | 370 | 320 | Earth 25% |
+| Dreadnoth the Jellied | 100 | 80 | 80 | Unknown |
+| Jelly | 50 | 50 | 50 | Fire 80% |
+| Moia | 60 | 120 | 140 | None |
+| Xarth | 125 | 230 | 155 | Water 85% |
+| Ocellus phase 1 | 50 | 135 | 50 | Unknown |
+| Ocellus phase 2 | 100 | 110 | 80 | Unknown |
+| Ocellus phase 3 | 250 | 250 | 250 | Unknown |
+
+Unlisted attack styles,
 maximum hits, melee attack bonuses, and attack speeds remain unknown; an attack speed
 of 0 marks an unknown value and is excluded from damage-taken calculations.
 
