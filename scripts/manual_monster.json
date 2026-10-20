@@ -102,5 +102,1166 @@
       "element": "water",
       "severity": 50
     }
+  },
+  {
+    "id": 16659,
+    "name": "Archive Guardian",
+    "version": "Shielded",
+    "image": "",
+    "level": 984,
+    "speed": 5,
+    "style": null,
+    "size": 5,
+    "max_hit": "?",
+    "skills": {
+      "atk": 250,
+      "def": 260,
+      "hp": 550,
+      "magic": 250,
+      "ranged": 280,
+      "str": 240
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 350,
+      "magic_str": 55,
+      "ranged": 350,
+      "ranged_str": 55,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 20,
+      "magic": 130,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 110,
+      "stab": 120
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16660,
+    "name": "Archive Guardian",
+    "version": "Unshielded",
+    "image": "",
+    "level": 984,
+    "speed": 5,
+    "style": null,
+    "size": 5,
+    "max_hit": "?",
+    "skills": {
+      "atk": 250,
+      "def": 260,
+      "hp": 1100,
+      "magic": 250,
+      "ranged": 280,
+      "str": 240
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 350,
+      "magic_str": 55,
+      "ranged": 350,
+      "ranged_str": 55,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 20,
+      "magic": 130,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 90,
+      "stab": 120
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16662,
+    "name": "Inert Guardian",
+    "version": "Active battery",
+    "image": "",
+    "level": 0,
+    "speed": 0,
+    "style": null,
+    "size": 2,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 50,
+      "hp": 180,
+      "magic": 50,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": -20,
+      "magic": -20,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 20,
+      "stab": 0
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16640,
+    "name": "Bork",
+    "version": "",
+    "image": "",
+    "level": 871,
+    "speed": 7,
+    "style": null,
+    "size": 4,
+    "max_hit": "?",
+    "skills": {
+      "atk": 200,
+      "def": 300,
+      "hp": 1500,
+      "magic": 90,
+      "ranged": 200,
+      "str": 200
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 40
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 10,
+      "magic": 300,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 130,
+      "stab": 140
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16641,
+    "name": "The Smorks",
+    "version": "",
+    "image": "",
+    "level": 640,
+    "speed": 7,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 220,
+      "hp": 600,
+      "magic": 185,
+      "ranged": 185,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 185,
+      "magic_str": 35,
+      "ranged": 250,
+      "ranged_str": 30,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 160,
+      "magic": 400,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 170,
+      "stab": 220
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16643,
+    "name": "Dagon'hai Elder / Monk",
+    "version": "Shielded",
+    "image": "",
+    "level": 427,
+    "speed": 6,
+    "style": null,
+    "size": 2,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 100,
+      "hp": 640,
+      "magic": 290,
+      "ranged": 260,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 250,
+      "magic_str": 0,
+      "ranged": 180,
+      "ranged_str": 0,
+      "str": 1
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 50,
+      "magic": 100,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 50,
+      "stab": 50
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16644,
+    "name": "Dagon'hai Elder / Monk",
+    "version": "Unshielded",
+    "image": "",
+    "level": 427,
+    "speed": 6,
+    "style": null,
+    "size": 2,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 100,
+      "hp": 7,
+      "magic": 290,
+      "ranged": 260,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 250,
+      "magic_str": 0,
+      "ranged": 180,
+      "ranged_str": 0,
+      "str": 1
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 50,
+      "magic": 100,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 50,
+      "stab": 50
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16649,
+    "name": "Cauldron",
+    "version": "Dagon'hai focus",
+    "image": "",
+    "level": 0,
+    "speed": 0,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 1,
+      "hp": 1000,
+      "magic": 1,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 0,
+      "magic": 0,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 0,
+      "stab": 0
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16650,
+    "name": "Imp",
+    "version": "",
+    "image": "",
+    "level": 168,
+    "speed": 4,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 250,
+      "def": 50,
+      "hp": 44,
+      "magic": 125,
+      "ranged": 66,
+      "str": 195
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 1,
+      "magic_str": 0,
+      "ranged": 6,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 0,
+      "magic": 0,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 0,
+      "stab": 0
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16651,
+    "name": "Demonic rift",
+    "version": "",
+    "image": "",
+    "level": 0,
+    "speed": 0,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 1,
+      "hp": 20,
+      "magic": 1,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 0,
+      "magic": 0,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 0,
+      "stab": 0
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16652,
+    "name": "Ezekiel",
+    "version": "",
+    "image": "",
+    "level": 984,
+    "speed": 5,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 250,
+      "def": 200,
+      "hp": 3000,
+      "magic": 200,
+      "ranged": 80,
+      "str": 150
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 250,
+      "magic_str": 30,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 80
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 35,
+      "magic": 200,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 90,
+      "stab": 150
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16653,
+    "name": "Animated Sword",
+    "version": "",
+    "image": "",
+    "level": 0,
+    "speed": 0,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 115,
+      "hp": 80,
+      "magic": 90,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 100,
+      "magic": 100,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 100,
+      "stab": 100
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16665,
+    "name": "Dreadnoth the Jellied",
+    "version": "",
+    "image": "",
+    "level": 888,
+    "speed": 4,
+    "style": null,
+    "size": 5,
+    "max_hit": "?",
+    "skills": {
+      "atk": 280,
+      "def": 125,
+      "hp": 2100,
+      "magic": 220,
+      "ranged": 250,
+      "str": 285
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 180,
+      "ranged_str": 20,
+      "str": 35
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 5,
+      "magic": 20,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 20,
+      "stab": 15
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16666,
+    "name": "Jelly",
+    "version": "",
+    "image": "",
+    "level": 101,
+    "speed": 5,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 200,
+      "def": 100,
+      "hp": 75,
+      "magic": 100,
+      "ranged": 1,
+      "str": 160
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 0,
+      "magic": 15,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 5,
+      "stab": 4
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16667,
+    "name": "Moia",
+    "version": "",
+    "image": "",
+    "level": 1004,
+    "speed": 5,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 195,
+      "hp": 1900,
+      "magic": 350,
+      "ranged": 200,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 300,
+      "magic_str": 15,
+      "ranged": 350,
+      "ranged_str": 35,
+      "str": 1
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 15,
+      "magic": 30,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 110,
+      "stab": 20
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16670,
+    "name": "Undead binder",
+    "version": "",
+    "image": "",
+    "level": 135,
+    "speed": 5,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 225,
+      "hp": 95,
+      "magic": 50,
+      "ranged": 1,
+      "str": 170
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 15
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 10,
+      "magic": -20,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 15,
+      "stab": 12
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16684,
+    "name": "Xarth",
+    "version": "",
+    "image": "",
+    "level": 912,
+    "speed": 4,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 250,
+      "def": 170,
+      "hp": 2600,
+      "magic": 350,
+      "ranged": 220,
+      "str": 225
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 250,
+      "magic_str": 0,
+      "ranged": 250,
+      "ranged_str": 30,
+      "str": 30
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 20,
+      "magic": 205,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 105,
+      "stab": 115
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16687,
+    "name": "Corpse",
+    "version": "",
+    "image": "",
+    "level": 89,
+    "speed": 0,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 50,
+      "def": 100,
+      "hp": 62,
+      "magic": 100,
+      "ranged": 1,
+      "str": 40
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 100,
+      "magic": 0,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 100,
+      "stab": 100
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16688,
+    "name": "Corpse",
+    "version": "Doused",
+    "image": "",
+    "level": 89,
+    "speed": 0,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 50,
+      "def": 100,
+      "hp": 62,
+      "magic": 100,
+      "ranged": 1,
+      "str": 40
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": -20,
+      "magic": 0,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": -20,
+      "stab": -20
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16674,
+    "name": "Ocellus",
+    "version": "Phase 1",
+    "image": "",
+    "level": 1121,
+    "speed": 5,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 215,
+      "hp": 2500,
+      "magic": 350,
+      "ranged": 250,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 150,
+      "magic_str": 0,
+      "ranged": 150,
+      "ranged_str": 0,
+      "str": 1
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 60,
+      "magic": 100,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 95,
+      "stab": 150
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16675,
+    "name": "Ocellus",
+    "version": "Phase 2",
+    "image": "",
+    "level": 1197,
+    "speed": 6,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 325,
+      "def": 250,
+      "hp": 5250,
+      "magic": 300,
+      "ranged": 300,
+      "str": 250
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 350,
+      "magic_str": 10,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 10
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 30,
+      "magic": 200,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 100,
+      "stab": 150
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16677,
+    "name": "Ocellus",
+    "version": "Phase 3",
+    "image": "",
+    "level": 1197,
+    "speed": 6,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 325,
+      "def": 250,
+      "hp": 5250,
+      "magic": 300,
+      "ranged": 300,
+      "str": 250
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 350,
+      "magic_str": 10,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 10
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 30,
+      "magic": 200,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 100,
+      "stab": 150
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16676,
+    "name": "The Blade",
+    "version": "Ocellus phase 2",
+    "image": "",
+    "level": 0,
+    "speed": 0,
+    "style": null,
+    "size": 3,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 250,
+      "hp": 1000,
+      "magic": 220,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 10,
+      "magic": 100,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 120,
+      "stab": 150
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16678,
+    "name": "Void Rift",
+    "version": "",
+    "image": "",
+    "level": 138,
+    "speed": 0,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 175,
+      "hp": 44,
+      "magic": 300,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 0,
+      "magic": 0,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 0,
+      "stab": 0
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16679,
+    "name": "Void Siphon",
+    "version": "",
+    "image": "",
+    "level": 138,
+    "speed": 0,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 175,
+      "hp": 44,
+      "magic": 300,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 50,
+      "magic": 0,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 50,
+      "stab": 50
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16680,
+    "name": "Void Augmenter",
+    "version": "",
+    "image": "",
+    "level": 138,
+    "speed": 0,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 175,
+      "hp": 44,
+      "magic": 300,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 0,
+      "magic": 50,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 0,
+      "stab": 0
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
+  },
+  {
+    "id": 16681,
+    "name": "Void Vine",
+    "version": "",
+    "image": "",
+    "level": 0,
+    "speed": 0,
+    "style": null,
+    "size": 1,
+    "max_hit": "?",
+    "skills": {
+      "atk": 1,
+      "def": 1,
+      "hp": 44,
+      "magic": 1,
+      "ranged": 1,
+      "str": 1
+    },
+    "offensive": {
+      "atk": 0,
+      "magic": 0,
+      "magic_str": 0,
+      "ranged": 0,
+      "ranged_str": 0,
+      "str": 0
+    },
+    "defensive": {
+      "flat_armour": 0,
+      "crush": 0,
+      "magic": 0,
+      "heavy": 50,
+      "standard": 50,
+      "light": 50,
+      "slash": 0,
+      "stab": 0
+    },
+    "attributes": [],
+    "immunities": {
+      "burn": null
+    },
+    "is_slayer_monster": false,
+    "weakness": null
   }
 ]

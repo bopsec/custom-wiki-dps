@@ -1,6 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import { Prayer } from '@/enums/Prayer';
 import { ammoApplicability, AmmoApplicability } from '@/lib/Equipment';
+import { getMonsters } from '@/lib/Monsters';
 import PlayerVsNPCCalc from '@/lib/PlayerVsNPCCalc';
 import { getSpecSwapAttackOutcomes } from '@/lib/SpecWeaponSwap';
 import {
@@ -11,6 +12,34 @@ import {
 const target = getTestMonsterById(415);
 
 describe('Fractured Archive rewards', () => {
+  test('Fractured Archive NPCs include the supplied combat stats and ranged defence', () => {
+    const ids = [
+      16659, 16660, 16662, 16640, 16641, 16643, 16644, 16649, 16650,
+      16651, 16652, 16653, 16665, 16666, 16667, 16670, 16684, 16687,
+      16688, 16674, 16675, 16677, 16676, 16678, 16679, 16680, 16681,
+    ];
+    const monsters = getMonsters();
+    for (const id of ids) {
+      const monster = monsters.find((m) => m.id === id);
+      expect(monster).toBeDefined();
+      expect(monster?.defensive.light).toBe(50);
+      expect(monster?.defensive.standard).toBe(50);
+      expect(monster?.defensive.heavy).toBe(50);
+    }
+
+    expect(monsters.find((m) => m.id === 16659)?.skills.hp).toBe(550);
+    expect(monsters.find((m) => m.id === 16660)?.skills.hp).toBe(1100);
+    expect(monsters.find((m) => m.id === 16688)?.defensive.crush).toBe(-20);
+    expect(monsters.find((m) => m.id === 16675)?.skills.hp).toBe(5250);
+    expect(monsters.find((m) => m.id === 16677)?.skills.hp).toBe(5250);
+  });
+
+  test('unknown NPC attack speed does not produce non-finite damage taken', () => {
+    const monster = getTestMonsterById(16651);
+    expect(monster.speed).toBe(0);
+    expect(calculateNpcVsPlayer(monster, getTestPlayer(monster)).npcDps).toBe(0);
+  });
+
   test('Zeal improves both melee accuracy and damage over Piety', () => {
     const weapon = findEquipment('Abyssal whip');
     const player = (prayer: Prayer) => getTestPlayer(target, {

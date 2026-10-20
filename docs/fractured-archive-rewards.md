@@ -9,6 +9,12 @@ uses the same rule, and saved loadouts with temporary IDs resolve by name after 
 The SVG equipment pictures in `cdn/equipment` are local preview icons based on the reward
 concepts, so wiki item sprites and images will replace them with the upstream records.
 
+The Fractured Archive NPCs supplied in the combat-stat table live in
+`scripts/manual_monster.json` and `cdn/json/monsters.json`. Their light, standard, and
+heavy ranged defence bonuses are provisional values of 50. Unlisted attack styles,
+maximum hits, melee attack bonuses, and attack speeds remain unknown; an attack speed
+of 0 marks an unknown value and is excluded from damage-taken calculations.
+
 Implemented in the calculator:
 
 - Elemental Fragments: four independent toggles in Extra Options add 2 to the matching

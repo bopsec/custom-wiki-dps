@@ -261,6 +261,7 @@ export default class NPCVsPlayerCalc extends BaseCalc {
    * Returns the expected damage per tick, based on the NPC's attack speed.
    */
   public getDpt() {
+    if (this.monster.speed <= 0) return 0;
     return this.getDistribution().getExpectedDamage() / this.monster.speed;
   }
 
