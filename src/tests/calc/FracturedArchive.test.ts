@@ -22,6 +22,7 @@ describe('Fractured Archive rewards', () => {
     for (const id of ids) {
       const monster = monsters.find((m) => m.id === id);
       expect(monster).toBeDefined();
+      expect(monster?.name.startsWith('Frac ')).toBe(true);
       expect(monster?.defensive.light).toBe(50);
       expect(monster?.defensive.standard).toBe(50);
       expect(monster?.defensive.heavy).toBe(50);

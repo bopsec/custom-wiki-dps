@@ -134616,7 +134616,7 @@
   },
   {
     "id": 16659,
-    "name": "Archive Guardian",
+    "name": "Frac Archive Guardian",
     "version": "Shielded",
     "image": "",
     "level": 984,
@@ -134659,7 +134659,7 @@
   },
   {
     "id": 16660,
-    "name": "Archive Guardian",
+    "name": "Frac Archive Guardian",
     "version": "Unshielded",
     "image": "",
     "level": 984,
@@ -134702,7 +134702,7 @@
   },
   {
     "id": 16662,
-    "name": "Inert Guardian",
+    "name": "Frac Inert Guardian",
     "version": "Active battery",
     "image": "",
     "level": 0,
@@ -134745,7 +134745,7 @@
   },
   {
     "id": 16640,
-    "name": "Bork",
+    "name": "Frac Bork",
     "version": "",
     "image": "",
     "level": 871,
@@ -134788,7 +134788,7 @@
   },
   {
     "id": 16641,
-    "name": "The Smorks",
+    "name": "Frac The Smorks",
     "version": "",
     "image": "",
     "level": 640,
@@ -134831,7 +134831,7 @@
   },
   {
     "id": 16643,
-    "name": "Dagon'hai Elder / Monk",
+    "name": "Frac Dagon'hai Elder / Monk",
     "version": "Shielded",
     "image": "",
     "level": 427,
@@ -134874,7 +134874,7 @@
   },
   {
     "id": 16644,
-    "name": "Dagon'hai Elder / Monk",
+    "name": "Frac Dagon'hai Elder / Monk",
     "version": "Unshielded",
     "image": "",
     "level": 427,
@@ -134917,7 +134917,7 @@
   },
   {
     "id": 16649,
-    "name": "Cauldron",
+    "name": "Frac Cauldron",
     "version": "Dagon'hai focus",
     "image": "",
     "level": 0,
@@ -134960,7 +134960,7 @@
   },
   {
     "id": 16650,
-    "name": "Imp",
+    "name": "Frac Imp",
     "version": "",
     "image": "",
     "level": 168,
@@ -135003,7 +135003,7 @@
   },
   {
     "id": 16651,
-    "name": "Demonic rift",
+    "name": "Frac Demonic rift",
     "version": "",
     "image": "",
     "level": 0,
@@ -135046,7 +135046,7 @@
   },
   {
     "id": 16652,
-    "name": "Ezekiel",
+    "name": "Frac Ezekiel",
     "version": "",
     "image": "",
     "level": 984,
@@ -135089,7 +135089,7 @@
   },
   {
     "id": 16653,
-    "name": "Animated Sword",
+    "name": "Frac Animated Sword",
     "version": "",
     "image": "",
     "level": 0,
@@ -135132,7 +135132,7 @@
   },
   {
     "id": 16665,
-    "name": "Dreadnoth the Jellied",
+    "name": "Frac Dreadnoth the Jellied",
     "version": "",
     "image": "",
     "level": 888,
@@ -135175,7 +135175,7 @@
   },
   {
     "id": 16666,
-    "name": "Jelly",
+    "name": "Frac Jelly",
     "version": "",
     "image": "",
     "level": 101,
@@ -135218,7 +135218,7 @@
   },
   {
     "id": 16667,
-    "name": "Moia",
+    "name": "Frac Moia",
     "version": "",
     "image": "",
     "level": 1004,
@@ -135261,7 +135261,7 @@
   },
   {
     "id": 16670,
-    "name": "Undead binder",
+    "name": "Frac Undead binder",
     "version": "",
     "image": "",
     "level": 135,
@@ -135304,7 +135304,7 @@
   },
   {
     "id": 16684,
-    "name": "Xarth",
+    "name": "Frac Xarth",
     "version": "",
     "image": "",
     "level": 912,
@@ -135347,7 +135347,7 @@
   },
   {
     "id": 16687,
-    "name": "Corpse",
+    "name": "Frac Corpse",
     "version": "",
     "image": "",
     "level": 89,
@@ -135390,7 +135390,7 @@
   },
   {
     "id": 16688,
-    "name": "Corpse",
+    "name": "Frac Corpse",
     "version": "Doused",
     "image": "",
     "level": 89,
@@ -135433,7 +135433,7 @@
   },
   {
     "id": 16674,
-    "name": "Ocellus",
+    "name": "Frac Ocellus",
     "version": "Phase 1",
     "image": "",
     "level": 1121,
@@ -135476,7 +135476,7 @@
   },
   {
     "id": 16675,
-    "name": "Ocellus",
+    "name": "Frac Ocellus",
     "version": "Phase 2",
     "image": "",
     "level": 1197,
@@ -135519,7 +135519,7 @@
   },
   {
     "id": 16677,
-    "name": "Ocellus",
+    "name": "Frac Ocellus",
     "version": "Phase 3",
     "image": "",
     "level": 1197,
@@ -135562,7 +135562,7 @@
   },
   {
     "id": 16676,
-    "name": "The Blade",
+    "name": "Frac The Blade",
     "version": "Ocellus phase 2",
     "image": "",
     "level": 0,
@@ -135605,7 +135605,7 @@
   },
   {
     "id": 16678,
-    "name": "Void Rift",
+    "name": "Frac Void Rift",
     "version": "",
     "image": "",
     "level": 138,
@@ -135648,7 +135648,7 @@
   },
   {
     "id": 16679,
-    "name": "Void Siphon",
+    "name": "Frac Void Siphon",
     "version": "",
     "image": "",
     "level": 138,
@@ -135691,7 +135691,7 @@
   },
   {
     "id": 16680,
-    "name": "Void Augmenter",
+    "name": "Frac Void Augmenter",
     "version": "",
     "image": "",
     "level": 138,
@@ -135734,7 +135734,7 @@
   },
   {
     "id": 16681,
-    "name": "Void Vine",
+    "name": "Frac Void Vine",
     "version": "",
     "image": "",
     "level": 0,
