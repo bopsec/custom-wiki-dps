@@ -24,6 +24,7 @@ describe('Fractured Archive rewards', () => {
       16640: [80, 50, 5],
       16641: [80, 150, 80],
       16665: [100, 80, 80],
+      16684: [125, 230, 155],
     };
     const weaknesses: Record<number, { element: string, severity: number }> = {
       16659: { element: 'fire', severity: 80 },
@@ -31,6 +32,7 @@ describe('Fractured Archive rewards', () => {
       16666: { element: 'fire', severity: 80 },
       16640: { element: 'earth', severity: 40 },
       16641: { element: 'earth', severity: 85 },
+      16684: { element: 'water', severity: 85 },
     };
     const monsters = getMonsters();
     for (const id of ids) {

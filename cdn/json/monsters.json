@@ -135347,9 +135347,9 @@
       "flat_armour": 0,
       "crush": 20,
       "magic": 205,
-      "heavy": 50,
-      "standard": 50,
-      "light": 50,
+      "heavy": 155,
+      "standard": 230,
+      "light": 125,
       "slash": 105,
       "stab": 115
     },
@@ -135358,7 +135358,10 @@
       "burn": null
     },
     "is_slayer_monster": false,
-    "weakness": null
+    "weakness": {
+      "element": "water",
+      "severity": 85
+    }
   },
   {
     "id": 16687,
