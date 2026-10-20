@@ -969,7 +969,7 @@
       "crush": 60,
       "magic": 100,
       "heavy": 50,
-      "standard": 50,
+      "standard": 135,
       "light": 50,
       "slash": 95,
       "stab": 150
@@ -1011,9 +1011,9 @@
       "flat_armour": 0,
       "crush": 30,
       "magic": 200,
-      "heavy": 50,
-      "standard": 50,
-      "light": 50,
+      "heavy": 80,
+      "standard": 110,
+      "light": 100,
       "slash": 100,
       "stab": 150
     },
