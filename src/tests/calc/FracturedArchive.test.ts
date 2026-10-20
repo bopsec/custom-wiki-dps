@@ -18,14 +18,30 @@ describe('Fractured Archive rewards', () => {
       16651, 16652, 16653, 16665, 16666, 16667, 16670, 16684, 16687,
       16688, 16674, 16675, 16677, 16676, 16678, 16679, 16680, 16681,
     ];
+    const rangedDefence: Record<number, [number, number, number]> = {
+      16659: [75, 120, 50],
+      16660: [75, 120, 50],
+      16640: [80, 50, 5],
+      16641: [80, 150, 80],
+      16665: [100, 80, 80],
+    };
+    const weaknesses: Record<number, { element: string, severity: number }> = {
+      16659: { element: 'fire', severity: 80 },
+      16660: { element: 'fire', severity: 80 },
+      16666: { element: 'fire', severity: 80 },
+      16640: { element: 'earth', severity: 40 },
+      16641: { element: 'earth', severity: 85 },
+    };
     const monsters = getMonsters();
     for (const id of ids) {
       const monster = monsters.find((m) => m.id === id);
+      const [light, standard, heavy] = rangedDefence[id] || [50, 50, 50];
       expect(monster).toBeDefined();
       expect(monster?.name.startsWith('Frac ')).toBe(true);
-      expect(monster?.defensive.light).toBe(50);
-      expect(monster?.defensive.standard).toBe(50);
-      expect(monster?.defensive.heavy).toBe(50);
+      expect(monster?.defensive.light).toBe(light);
+      expect(monster?.defensive.standard).toBe(standard);
+      expect(monster?.defensive.heavy).toBe(heavy);
+      expect(monster?.weakness).toEqual(weaknesses[id] || null);
     }
 
     expect(monsters.find((m) => m.id === 16659)?.skills.hp).toBe(550);

@@ -11,7 +11,10 @@ concepts, so wiki item sprites and images will replace them with the upstream re
 
 The Fractured Archive NPCs supplied in the combat-stat table live in
 `scripts/manual_monster.json` and `cdn/json/monsters.json`. Their light, standard, and
-heavy ranged defence bonuses are provisional values of 50. Unlisted attack styles,
+heavy ranged defence bonuses are provisional values of 50, except both Archive Guardian
+variants (75/120/50), Bork (80/50/5), the Smorks (80/150/80), and Dreadnoth the Jellied
+(100/80/80). Both Archive Guardians and Jelly have 80% fire weakness; Bork has 40% earth
+weakness, and the Smorks have 85% earth weakness. Unlisted attack styles,
 maximum hits, melee attack bonuses, and attack speeds remain unknown; an attack speed
 of 0 marks an unknown value and is excluded from damage-taken calculations.
 
