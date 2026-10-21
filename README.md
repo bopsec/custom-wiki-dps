@@ -5,7 +5,7 @@ This branch is an unofficial modified fork intended for hosting at
 
 The upstream project is the [OSRS Wiki DPS Calculator](https://github.com/weirdgloop/osrs-dps-calc),
 created for the [OSRS Wiki](https://oldschool.runescape.wiki). This fork preserves upstream
-license and attribution notices and publishes modified source under GPLv3.
+license and attribution notices and publishes modified source under GPLv3. 
 
 This site is not affiliated with, sponsored by, or endorsed by Jagex, Weird Gloop, or the OSRS Wiki.
 RuneScape and Old School RuneScape are trademarks of Jagex Limited.
