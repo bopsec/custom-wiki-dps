@@ -19,6 +19,15 @@ import { keys } from '@/utils';
 import { MonsterAttribute } from '@/enums/MonsterAttribute';
 import { Factor } from '@/lib/Math';
 
+const FRACTURED_ARCHIVE_CAPPED_IDS = [
+  16659, 16660, // Archive Guardian
+  16640, // Bork
+  16652, // Ezekiel
+  16667, // Moia
+  16684, // Xarth
+  16674, 16675, 16677, // Ocellus phases 1-3
+];
+
 export const getDefenceFloor = (m: Monster): number => {
   if (VERZIK_IDS.includes(m.id) || VARDORVIS_IDS.includes(m.id)) {
     return m.skills.def;
@@ -58,6 +67,9 @@ export const getDefenceFloor = (m: Monster): number => {
   }
   if (YAMA_IDS.includes(m.id)) {
     return 145;
+  }
+  if (FRACTURED_ARCHIVE_CAPPED_IDS.includes(m.id)) {
+    return Math.trunc(m.skills.def * 3 / 5);
   }
 
   // no limit

@@ -1,9 +1,10 @@
 import { describe, expect, test } from '@jest/globals';
 import { Prayer } from '@/enums/Prayer';
 import { ammoApplicability, AmmoApplicability } from '@/lib/Equipment';
-import { getMonsters } from '@/lib/Monsters';
+import { getMonsters, INITIAL_MONSTER_INPUTS } from '@/lib/Monsters';
 import PlayerVsNPCCalc from '@/lib/PlayerVsNPCCalc';
 import { getSpecSwapAttackOutcomes } from '@/lib/SpecWeaponSwap';
+import applyDefenceReductions, { getDefenceFloor } from '@/lib/scaling/DefenceReduction';
 import {
   calculateNpcVsPlayer, calculatePlayerVsNpc, findEquipment, findSpell,
   getTestMonsterById, getTestPlayer,
@@ -12,6 +13,27 @@ import {
 const target = getTestMonsterById(415);
 
 describe('Fractured Archive rewards', () => {
+  test('Fractured Archive Defence reductions stop at each NPC\'s floor', () => {
+    const cappedIds = [16659, 16660, 16640, 16652, 16667, 16684, 16674, 16675, 16677];
+    const uncappedIds = [16665, 16641, 16643, 16644, 16676];
+    const monsters = getMonsters();
+
+    for (const id of [...cappedIds, ...uncappedIds]) {
+      const base = monsters.find((m) => m.id === id);
+      expect(base).toBeDefined();
+      const monster = {
+        ...base!,
+        inputs: {
+          ...INITIAL_MONSTER_INPUTS,
+          defenceReductions: { ...INITIAL_MONSTER_INPUTS.defenceReductions, bgs: 10000 },
+        },
+      };
+      const floor = cappedIds.includes(id) ? Math.trunc(base!.skills.def * 3 / 5) : 0;
+      expect(getDefenceFloor(monster)).toBe(floor);
+      expect(applyDefenceReductions(monster).skills.def).toBe(floor);
+    }
+  });
+
   test('Fractured Archive NPCs include the supplied combat stats and ranged defence', () => {
     const ids = [
       16659, 16660, 16662, 16640, 16641, 16643, 16644, 16649, 16650,
