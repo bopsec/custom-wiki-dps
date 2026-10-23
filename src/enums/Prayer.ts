@@ -14,6 +14,7 @@ import Deadeye from '@/public/img/prayers/Deadeye.png';
 import MysticVigour from '@/public/img/prayers/Mystic_Vigour.png';
 import Chivalry from '@/public/img/prayers/Chivalry.png';
 import Piety from '@/public/img/prayers/Piety.png';
+import Zeal from '@/public/img/prayers/Zeal.png';
 import Rigour from '@/public/img/prayers/Rigour.png';
 import Augury from '@/public/img/prayers/Augury.png';
 import ThickSkin from '@/public/img/prayers/Thick Skin.png';
@@ -218,7 +219,7 @@ export const PrayerMap: { [k in Prayer]: PrayerData } = {
   [Prayer.ZEAL]: {
     renderOrder: 18.5,
     name: 'Zeal',
-    image: Piety,
+    image: Zeal,
     drainRate: 24,
     combatStyle: 'melee',
     factorAccuracy: [125, 100],

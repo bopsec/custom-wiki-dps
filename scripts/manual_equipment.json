@@ -35,7 +35,7 @@
         "weight":  0,
         "version":  "",
         "slot":  "shield",
-        "image":  "Rondache preview.svg",
+        "image":  "Rondache.png",
         "speed":  0,
         "category":  "",
         "bonuses":  {
@@ -66,7 +66,7 @@
         "weight":  0,
         "version":  "",
         "slot":  "weapon",
-        "image":  "Zoryas Tome preview.svg",
+        "image":  "Zorya's tome.png",
         "speed":  3,
         "category":  "Powered Staff",
         "bonuses":  {
@@ -97,7 +97,7 @@
         "weight":  0,
         "version":  "",
         "slot":  "weapon",
-        "image":  "Obligator preview.svg",
+        "image":  "Obligator.png",
         "speed":  5,
         "category":  "Breaker",
         "bonuses":  {
@@ -128,7 +128,7 @@
         "weight":  0,
         "version":  "",
         "slot":  "weapon",
-        "image":  "Ascension crossbows preview.svg",
+        "image":  "Ascension crossbows.png",
         "speed":  3,
         "category":  "Crossbow",
         "bonuses":  {
@@ -159,7 +159,7 @@
         "weight":  0,
         "version":  "",
         "slot":  "ammo",
-        "image":  "Ascension bolts preview.svg",
+        "image":  "Ascension bolts 5.png",
         "speed":  0,
         "category":  "",
         "bonuses":  {
@@ -190,7 +190,7 @@
         "weight":  0,
         "version":  "",
         "slot":  "ammo",
-        "image":  "Diamond ascension bolts preview.svg",
+        "image":  "Diamond ascension bolts (e) 5.png",
         "speed":  0,
         "category":  "",
         "bonuses":  {
@@ -221,7 +221,7 @@
         "weight":  0,
         "version":  "",
         "slot":  "ammo",
-        "image":  "Onyx ascension bolts preview.svg",
+        "image":  "Onyx ascension bolts (e) 5.png",
         "speed":  0,
         "category":  "",
         "bonuses":  {

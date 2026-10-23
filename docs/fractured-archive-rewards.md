@@ -6,8 +6,9 @@ fallback stats live in `scripts/manual_equipment.json` and are based on the
 and its linked stat images. These entries have negative temporary IDs. Equipment loaded from
 `cdn/json/equipment.json` takes precedence by item name and slot. The equipment generator
 uses the same rule, and saved loadouts with temporary IDs resolve by name after real IDs arrive.
-The SVG equipment pictures in `cdn/equipment` are local preview icons based on the reward
-concepts, so wiki item sprites and images will replace them with the upstream records.
+The manual equipment entries use the released OSRS Wiki inventory icons stored in
+`cdn/equipment`. Available Wiki NPC portraits for the Fractured Archive entries are stored
+in `cdn/monsters`; entries without a published portrait retain an empty image field.
 
 The Fractured Archive NPCs supplied in the combat-stat table live in
 `scripts/manual_monster.json` and `cdn/json/monsters.json`. Their light, standard, and
