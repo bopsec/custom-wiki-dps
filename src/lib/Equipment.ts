@@ -13,7 +13,6 @@ import {
   TOMBS_OF_AMASCUT_MONSTER_IDS,
 } from '@/lib/constants';
 import { sum } from 'd3-array';
-import { EquipmentCategory } from '@/enums/EquipmentCategory';
 import equipment from '../../cdn/json/equipment.json';
 import generatedEquipmentAliases from './EquipmentAliases';
 
@@ -22,10 +21,7 @@ export type EquipmentBonuses = Pick<Player, 'bonuses' | 'offensive' | 'defensive
 /**
  * All available equipment that a player can equip.
  */
-// The Obligator uses its own Thrust and Smash style options in this fork.
-export const availableEquipment = (equipment as EquipmentPiece[]).map((item) => (item.name === 'Obligator'
-  ? { ...item, category: EquipmentCategory.BREAKER }
-  : item));
+export const availableEquipment = equipment as EquipmentPiece[];
 
 export const noStatExceptions = [
   'Castle wars bracelet',
@@ -168,17 +164,8 @@ const ammoForRangedWeapons: { [weapon: number]: number[] } = {
   28869: [28872, 28878], // Hunters' sunlight crossbow
   29000: [28991], // Eclipse atlatl
   33245: commonAmmoCategories().bow_t60, // Nature's recurve
+  34681: [34684, 34690, 34696, 34702, 34708], // Ascension crossbows
 };
-
-const ascensionCrossbows = availableEquipment.find((item) => item.name === 'Ascension crossbows');
-if (ascensionCrossbows) {
-  ammoForRangedWeapons[ascensionCrossbows.id] = availableEquipment
-    .filter((item) => [
-      'Ascension bolts', 'Diamond ascension bolts', 'Diamond ascension bolts (e)',
-      'Onyx ascension bolts', 'Onyx ascension bolts (e)',
-    ].includes(item.name))
-    .map((item) => item.id);
-}
 
 export enum AmmoApplicability {
   /** Include the ammo slot bonuses in the equipment stats */
@@ -266,12 +253,10 @@ export const getCanonicalEquipment = (inputEq: PlayerEquipment) => {
 export const calculateAttackSpeed = (player: Player, monster: Monster): number => {
   let attackSpeed = player.equipment.weapon?.speed || DEFAULT_ATTACK_SPEED;
 
-  if (player.equipment.weapon?.name === 'Obligator' && player.style.name === 'Smash') {
-    attackSpeed = 3;
-  }
-
   if (player.style.type === 'ranged' && player.style.stance === 'Rapid') {
     attackSpeed -= 1;
+  } else if (player.equipment.weapon?.name === 'Obligator' && player.style.name === 'Smash') {
+    attackSpeed = 3;
   } else if (CAST_STANCES.includes(player.style.stance)) {
     if (player.equipment.weapon?.name === 'Harmonised Nightmare staff'
       && player.spell?.spellbook === 'standard'

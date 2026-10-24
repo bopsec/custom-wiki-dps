@@ -101,13 +101,6 @@ export default class NPCVsPlayerCalc extends BaseCalc {
       ]);
     }
 
-    if (this.wearing('Rondache') && this.monster.style !== null) {
-      dist = dist.transform(
-        (hit) => HitDistribution.single(1, [new Hitsplat(Math.max(0, hit.damage - 2), hit.accurate)]),
-        { transformInaccurate: false },
-      );
-    }
-
     // There's some monsters that can hit through prayers, but let's worry about that later
     // const style = this.monster.style || '';
     // if (
@@ -228,6 +221,8 @@ export default class NPCVsPlayerCalc extends BaseCalc {
       // For now, if the monster is using the magic attack style and the max hit on the wiki is different to the max hit
       // returned by the standard calculation we're using above, then let's just use the wiki value. A lot of magic
       // monsters have a hardcoded max hit (see https://twitter.com/JagexAsh/status/1754447323222929712).
+      maxHit = this.monster.maxHit;
+    } else if (isCustomMonster && this.monster.maxHit) {
       maxHit = this.monster.maxHit;
     }
 

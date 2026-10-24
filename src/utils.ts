@@ -523,10 +523,6 @@ export const CombatStyleMap: { [k in EquipmentCategory]: { [k: string]: { image:
     Pound: { image: '255' },
     Pummel: { image: '256' },
   },
-  [EquipmentCategory.BREAKER]: {
-    Thrust: { image: '255' },
-    Smash: { image: '253' },
-  },
   [EquipmentCategory.BLUNT]: {
     Block: { image: '253' },
     Pound: { image: '255' },
@@ -607,6 +603,11 @@ export const CombatStyleMap: { [k in EquipmentCategory]: { [k: string]: { image:
     Chop: { image: '239' },
     Block: { image: '237' },
     Slash: { image: '238' },
+  },
+  [EquipmentCategory.CHAIN_MACE]: {
+    'Thrust-Acc': { image: '266' },
+    'Thrust-Agg': { image: '267' },
+    Smash: { image: '256' },
   },
 };
 
@@ -734,12 +735,6 @@ export const getCombatStylesForCategory = (style: EquipmentCategory): PlayerComb
         { name: 'Smash', type: 'crush', stance: 'Aggressive' },
       ];
       break;
-    case EquipmentCategory.BREAKER:
-      ret = [
-        { name: 'Thrust', type: 'crush', stance: 'Aggressive' },
-        { name: 'Smash', type: 'crush', stance: 'Aggressive' },
-      ];
-      break;
     case EquipmentCategory.BLUNT:
       ret = [
         { name: 'Pound', type: 'crush', stance: 'Accurate' },
@@ -833,6 +828,17 @@ export const getCombatStylesForCategory = (style: EquipmentCategory): PlayerComb
         { name: 'Block', type: 'slash', stance: 'Defensive' },
       ];
       break;
+    case EquipmentCategory.CHAIN_MACE:
+      ret = [
+        {
+          name: 'Thrust-Acc', displayNameOverride: 'Thrust', type: 'crush', stance: 'Accurate',
+        },
+        {
+          name: 'Thrust-Agg', displayNameOverride: 'Thrust', type: 'crush', stance: 'Aggressive',
+        },
+        { name: 'Smash', type: 'crush', stance: 'Aggressive' },
+      ];
+      break;
     default:
       ret = [];
       break;
@@ -843,4 +849,18 @@ export const getCombatStylesForCategory = (style: EquipmentCategory): PlayerComb
     { name: 'Spell', type: 'magic', stance: 'Manual Cast' },
   );
   return ret;
+};
+
+/**
+ * Returns true if the user is on macOS.
+ */
+export const isMac = typeof window !== 'undefined' && /Mac OS X/i.test(navigator.userAgent);
+
+export const getDefaultCombatStyle = (category: EquipmentCategory): PlayerCombatStyle => {
+  const styles = getCombatStylesForCategory(category);
+
+  // Default to rapid or aggressive if available, or the first available style if not
+  return styles.find((s) => s.stance === 'Rapid')
+    ?? styles.find((s) => s.stance === 'Aggressive')
+    ?? styles[0];
 };

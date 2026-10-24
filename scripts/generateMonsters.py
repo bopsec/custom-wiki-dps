@@ -287,10 +287,9 @@ def main():
     with open('manual_monster.json', 'r') as f:
         manual_monsters = json.load(f)
         upstream_ids = {m['id'] for m in data}
-        upstream_names = {(m['name'].removeprefix('Frac ').lower(), m.get('version', '').lower()) for m in data}
+        upstream_names = {(m['name'].lower(), m.get('version', '').lower()) for m in data}
         for m in manual_monsters:
-            canonical_name = m['name'].removeprefix('Frac ').lower()
-            if m['id'] in upstream_ids or (canonical_name, m.get('version', '').lower()) in upstream_names:
+            if m['id'] in upstream_ids or (m['name'].lower(), m.get('version', '').lower()) in upstream_names:
                 continue
             img = m.get('image')
             if img: 

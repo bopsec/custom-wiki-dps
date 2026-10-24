@@ -10,7 +10,7 @@ import {
   flatLimitTransformer,
   HitDistribution,
   Hitsplat,
-  HitTransformer,
+  HitTransformer, linearMaxTransformer,
   linearMinTransformer,
   multiplyTransformer,
   TransformOpts,
@@ -19,7 +19,6 @@ import {
 } from '@/lib/HitDist';
 import {
   canUseSunfireRunes,
-  getSpellMaxHit,
   isBindSpell,
 } from '@/types/Spell';
 import { PrayerData, PrayerMap } from '@/enums/Prayer';
@@ -91,9 +90,11 @@ import {
   rubyBolts,
 } from '@/lib/dists/bolts';
 import { burningClawDoT, burningClawSpec, dClawDist } from '@/lib/dists/claws';
+import getSpellMaxHit from '@/types/SpellMax';
 
 const PARTIALLY_IMPLEMENTED_SPECS: string[] = [
   'Ancient godsword',
+  "Zorya's tome", // missing the follow-up attack buffs
 ];
 
 // https://oldschool.runescape.wiki/w/Category:Weapons_with_Special_attacks
@@ -476,6 +477,12 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     }
 
+    if (this.wearing('Obligator') && this.monster.size >= 2 && this.player.style.name !== 'Smash') {
+      // todo placement? mostly relative to inq bonus / is it post-roll?
+      const bonus = this.monster.size === 2 ? 20 : 40;
+      maxHit = this.trackFactor(DetailKey.MAX_HIT_OBLIGATOR, maxHit, [100 + bonus, 100]);
+    }
+
     if (this.opts.usingSpecialAttack) {
       if (this.isWearingGodsword()) {
         maxHit = this.trackFactor(DetailKey.MAX_HIT_GODSWORD_SPEC, maxHit, [11, 10]);
@@ -765,7 +772,8 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.wearing('Tonalztics of Ralos')) {
       // rolls 75% of max hit, but can hit twice
       // double hit is implemented in hit distribution
-      maxHit = this.trackFactor(DetailKey.MAX_HIT_TONALZTICS, maxHit, [3, 4]);
+      const maxReduction = Math.trunc(maxHit * 1 / 4);
+      maxHit = this.trackAdd(DetailKey.MAX_HIT_TONALZTICS, maxHit, -maxReduction);
     }
 
     if (this.opts.usingSpecialAttack) {
@@ -887,12 +895,12 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.opts.usingSpecialAttack) {
       if (this.isWearingAccursedSceptre()) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
-      } else if (this.wearing("Zorya's tome")) {
-        attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [5, 2]);
       } else if (this.wearing('Volatile Nightmare staff')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
       } else if (this.wearing('Eye of Ayak')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [2, 1]);
+      } else if (this.wearing("Zorya's tome")) {
+        attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [250, 100]);
       }
     }
 
@@ -919,7 +927,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     const { buffs } = this.player;
 
     if (spell) {
-      maxHit = getSpellMaxHit(spell, magicLevel);
+      maxHit = getSpellMaxHit(this.player);
       if (spell?.name === 'Magic Dart') {
         if (this.wearing("Slayer's staff (e)") && this.isSlayerMonster() && buffs.onSlayerTask) {
           maxHit = Math.trunc(13 + magicLevel / 6);
@@ -988,9 +996,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.opts.usingSpecialAttack && this.wearing('Eye of Ayak')) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [13, 10]);
     }
-    if (this.wearing("Zorya's tome") && this.opts.usingSpecialAttack) {
-      maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [8, 5]);
-    }
 
     if (this.wearing('Chaos gauntlets') && spell?.name.toLowerCase()
       .includes('bolt')) {
@@ -1000,9 +1005,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       maxHit += 10;
     }
     if (this.hasMatchingElementalAmulet()) {
-      maxHit += 2;
-    }
-    if (spell?.element && buffs.elementalFragments?.[spell.element]) {
       maxHit += 2;
     }
 
@@ -1057,6 +1059,8 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.opts.usingSpecialAttack) {
       if (this.isWearingAccursedSceptre()) {
         maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [3, 2]);
+      } else if (this.wearing("Zorya's tome")) {
+        maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [160, 100]);
       }
     }
 
@@ -1440,8 +1444,13 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     }
 
     if (this.wearing('Sunspear') && this.opts.usingSpecialAttack) {
-      const effectDmg = this.trackFactor(DetailKey.MAX_HIT_SPEC, max, [7, 10]);
-      return new AttackDistribution([
+      // In-game testing shows that the spec hits are consistent with adding 1 after the 70% factor
+      const effectDmg = Math.trunc(max * 7 / 10) + 1;
+      this.track(DetailKey.MAX_HIT_SPEC, effectDmg, `(${max} * 7 / 10) + 1 = ${effectDmg}`);
+
+      // In-game testing also shows that vampyrebane bonuses are applied on top of this, so we don't
+      // want to return the dist early
+      dist = new AttackDistribution([
         HitDistribution.single(acc, [new Hitsplat(effectDmg)]),
       ]);
     }
@@ -1476,6 +1485,17 @@ export default class PlayerVsNPCCalc extends BaseCalc {
           const secondHitDist = firstHit.accurate ? loweredDefHitDist : standardHitDist;
           return firstHitDist.zip(secondHitDist);
         });
+      }
+    }
+
+    if (this.isUsingMeleeStyle() && this.wearing('Obligator') && this.player.style.name !== 'Smash') {
+      // todo can't wait to learn how this interacts with min hits next leagues
+      const rerolls = 2
+        + (this.monster.defensive.stab > this.monster.defensive.crush ? 1 : 0)
+        + (this.monster.defensive.slash > this.monster.defensive.crush ? 1 : 0);
+
+      for (let i = 1; i < rerolls; i++) {
+        dist = dist.transform(linearMaxTransformer(max), { transformInaccurate: false });
       }
     }
 
@@ -1554,12 +1574,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       if (hitCount !== 1) {
         dist = new AttackDistribution(Array(hitCount).fill(standardHitDist));
       }
-    }
-
-    if (this.opts.usingSpecialAttack && this.wearing("Zorya's tome")) {
-      // The first hit unlocks three independently rolled, empowered follow-up hits.
-      // Group their damage into one special-attack distribution for comparison.
-      dist = new AttackDistribution(Array(4).fill(standardHitDist), true);
     }
 
     if (this.opts.usingSpecialAttack && this.wearing('Abyssal dagger')) {
@@ -1645,23 +1659,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         hits.push(HitDistribution.linear(splatAcc, min, Math.max(min, splatMax)));
       }
       dist = new AttackDistribution(hits);
-    }
-
-    if (this.isUsingMeleeStyle() && this.wearing('Obligator') && this.player.style.name === 'Thrust') {
-      const crush = this.monster.defensive.crush;
-      const rolls = 2 + Number(this.monster.defensive.stab > crush) + Number(this.monster.defensive.slash > crush);
-      const sizeBonus = Math.min(Math.max(this.monster.size - 1, 0), 2);
-      // The size bonus raises the maximum damage roll. Scale each roll's outcome range,
-      // not the chosen hitsplat, so every damage value through the final max is possible.
-      const thrustMax = Math.trunc(max * (100 + 20 * sizeBonus) / 100);
-      const hitRange = thrustMax - min + 1;
-      const hits = [new WeightedHit(1 - firstHitAcc, [Hitsplat.INACCURATE])];
-      for (let damage = min; damage <= thrustMax; damage++) {
-        const high = ((damage - min + 1) / hitRange) ** rolls;
-        const low = ((damage - min) / hitRange) ** rolls;
-        hits.push(new WeightedHit(firstHitAcc * (high - low), [new Hitsplat(damage)]));
-      }
-      dist = new AttackDistribution([new HitDistribution(hits).flatten()]);
     }
 
     if (this.isUsingMeleeStyle() && this.wearing('Dual macuahuitl')) {
@@ -1834,8 +1831,8 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       zcb: this.wearing('Zaryte crossbow'),
       spec: this.opts.usingSpecialAttack,
       kandarinDiary: this.player.buffs.kandarinDiary,
+      ascensions: this.wearing('Ascension crossbows'),
       monster: this.monster,
-      procChanceMultiplier: this.wearing('Ascension crossbows') ? 0.5 : 1,
     };
     if (this.player.style.type === 'ranged' && this.player.equipment.weapon?.category === EquipmentCategory.CROSSBOW) {
       if (this.wearing(['Opal bolts (e)', 'Opal dragon bolts (e)'])) {
@@ -1844,9 +1841,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         dist = dist.transform(pearlBolts(boltContext));
       } else if (this.wearing(['Diamond bolts (e)', 'Diamond dragon bolts (e)', 'Diamond ascension bolts (e)'])) {
         dist = dist.transform(diamondBolts(boltContext));
-      } else if (this.wearing(['Dragonstone bolts (e)', 'Dragonstone dragon bolts (e)'])) {
+      } else if (this.wearing(['Dragonstone bolts (e)', 'Dragonstone dragon bolts (e)', 'Onyx ascension bolts (e)'])) {
         dist = dist.transform(dragonstoneBolts(boltContext));
-      } else if (this.wearing(['Onyx bolts (e)', 'Onyx dragon bolts (e)', 'Onyx ascension bolts (e)']) && !mattrs.includes(MonsterAttribute.UNDEAD)) {
+      } else if (this.wearing(['Onyx bolts (e)', 'Onyx dragon bolts (e)']) && !mattrs.includes(MonsterAttribute.UNDEAD)) {
         dist = dist.transform(onyxBolts(boltContext));
       }
     }
@@ -1934,6 +1931,13 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       if (YAMA_VOID_FLARE_IDS.includes(this.monster.id) && this.player.buffs.markOfDarknessSpell && this.player.spell?.name.includes('Demonbane')) {
         const demonbaneFactor = this.wearing('Purging staff') ? 50 : 25;
         return new AttackDistribution([HitDistribution.single(1.0, [new Hitsplat(max + Math.trunc(Math.trunc(max * demonbaneFactor / 100) * this.demonbaneVulnerability() / 100))])]);
+      }
+
+      if (this.wearing(['Sanguinesti staff', 'Holy sanguinesti staff'])) {
+        return new AttackDistribution([new HitDistribution([
+          new WeightedHit(0.8, [new Hitsplat(dist.getMax() - 8)]),
+          new WeightedHit(0.2, [new Hitsplat(dist.getMax())]),
+        ])]);
       }
 
       return new AttackDistribution([HitDistribution.single(1.0, [new Hitsplat(dist.getMax())])]);
@@ -2148,14 +2152,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
   }
 
   public getExpectedAttackSpeed() {
-    if (this.opts.usingSpecialAttack && this.wearing("Zorya's tome")) {
-      const firstHitChance = sum(
-        this.getDistribution().dists[0].hits.filter((hit) => hit.anyAccurate()),
-        (hit) => hit.probability,
-      );
-      return this.getAttackSpeed() + 6 * firstHitChance;
-    }
-
     if (this.isWearingBloodMoonSet()) {
       const acc = this.getHitChance();
       const procChance = this.opts.usingSpecialAttack
@@ -2294,22 +2290,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     return () => [[1.0, baseSpeed]];
   }
 
-  private getDelayedHitDistribution(preserveHitsplats = false): DelayedHit[] {
-    const dist = this.getDistribution();
-    if (dist.followUpsRequireFirstHit) {
-      const followUpSum = dist.dists.slice(1)
-        .reduce((previous, next) => previous.zip(next).cumulative());
-      return dist.dists[0].hits.flatMap((first): DelayedHit[] => (
-        first.anyAccurate()
-          ? new HitDistribution([first]).zip(followUpSum).cumulative().hits
-            .map((hit) => [hit, this.getAttackSpeed() + 6])
-          : [[first, this.getAttackSpeed()]]
-      ));
-    }
-    return (preserveHitsplats ? dist.zipped : dist.singleHitsplat)
-      .withProbabilisticDelays(this.getWeaponDelayProvider());
-  }
-
   /**
    * Returns a distribution of times-to-kill (in ticks) to probabilities.
    * Because the result will not be densely populated (unless attack speed is 1),
@@ -2325,7 +2305,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     const speed = this.getAttackSpeed();
     const iterMax = TTK_DIST_MAX_ITER_ROUNDS * speed;
 
-    const playerDist = this.getDelayedHitDistribution();
+    const playerDist = this.getDistribution()
+      .singleHitsplat
+      .withProbabilisticDelays(this.getWeaponDelayProvider());
 
     // dist attack-on-specific-tick probabilities
     // todo thralls, append here
@@ -2445,7 +2427,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }),
     );
 
-    return subCalc.getDelayedHitDistribution(true);
+    return subCalc.getDistribution().zipped.withProbabilisticDelays(this.getWeaponDelayProvider());
   }
 
   // a computational shortcut for internal class use only
@@ -2579,7 +2561,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     const [, max] = this.getMinAndMax();
     return this.wearing('Sunspear')
       && this.opts.usingSpecialAttack
-      && this.monster.inputs.monsterCurrentHp <= Math.trunc(max * 7 / 10);
+      && this.monster.inputs.monsterCurrentHp <= (Math.trunc(max * 7 / 10) + 1);
   }
 
   private getGlyphicAttenuationFactor(): Factor {

@@ -293,29 +293,11 @@ export class HitDistribution {
 export class AttackDistribution {
   readonly dists: HitDistribution[];
 
-  readonly followUpsRequireFirstHit: boolean;
-
   private _zipped?: HitDistribution;
 
   get zipped(): HitDistribution {
     if (!this._zipped) {
-      if (this.followUpsRequireFirstHit) {
-        const followUps = this.dists.slice(1);
-        this._zipped = new HitDistribution(this.dists[0].hits.flatMap((first) => {
-          if (!first.anyAccurate()) {
-            return [new WeightedHit(first.probability, [
-              ...first.hitsplats,
-              ...followUps.map(() => Hitsplat.INACCURATE),
-            ])];
-          }
-          return followUps.reduce(
-            (hits, next) => hits.zip(next),
-            new HitDistribution([first]),
-          ).hits;
-        }));
-      } else {
-        this._zipped = this.dists.reduce((prev, curr) => prev.zip(curr));
-      }
+      this._zipped = this.dists.reduce((prev, curr) => prev.zip(curr));
     }
     return this._zipped;
   }
@@ -324,25 +306,13 @@ export class AttackDistribution {
 
   get singleHitsplat(): HitDistribution {
     if (!this._singleHitsplat) {
-      if (this.followUpsRequireFirstHit) {
-        const followUpSum = this.dists.slice(1)
-          .reduce((prev, curr) => prev.zip(curr).cumulative());
-        const hits = this.dists[0].hits.flatMap((first) => (
-          first.anyAccurate()
-            ? new HitDistribution([first]).zip(followUpSum).cumulative().hits
-            : [first]
-        ));
-        this._singleHitsplat = new HitDistribution(hits).cumulative();
-      } else {
-        this._singleHitsplat = this.dists.reduce((prev, curr) => prev.zip(curr).cumulative());
-      }
+      this._singleHitsplat = this.dists.reduce((prev, curr) => prev.zip(curr).cumulative());
     }
     return this._singleHitsplat;
   }
 
-  constructor(dists: HitDistribution[], followUpsRequireFirstHit = false) {
+  constructor(dists: HitDistribution[]) {
     this.dists = dists;
-    this.followUpsRequireFirstHit = followUpsRequireFirstHit;
   }
 
   public addDist(d: HitDistribution): void {
@@ -374,11 +344,6 @@ export class AttackDistribution {
   }
 
   public getExpectedDamage(): number {
-    if (this.followUpsRequireFirstHit) {
-      const first = this.dists[0];
-      const firstHitChance = sum(first.hits.filter((hit) => hit.anyAccurate()), (hit) => hit.probability);
-      return first.expectedHit() + firstHitChance * sum(this.dists.slice(1).map((dist) => dist.expectedHit()));
-    }
     return sum(this.dists.map((d) => d.expectedHit())) || 0;
   }
 
@@ -437,7 +402,7 @@ export class AttackDistribution {
     return new AttackDistribution([
       maxedFirstDist,
       ...this.dists.slice(1),
-    ], this.followUpsRequireFirstHit);
+    ]);
   }
 
   public firstHitAccurate(): AttackDistribution {
@@ -464,7 +429,7 @@ export class AttackDistribution {
     return new AttackDistribution([
       accurateFirstDist.scaleProbability(1 / totalProbability),
       ...this.dists.slice(1),
-    ], this.followUpsRequireFirstHit);
+    ]);
   }
 
   public firstHitMinimum(minimum: number): AttackDistribution {
@@ -483,13 +448,12 @@ export class AttackDistribution {
     return new AttackDistribution([
       newFirstDist,
       ...this.dists.slice(1),
-    ], this.followUpsRequireFirstHit).flatten();
+    ]).flatten();
   }
 
   private map(m: (d: HitDistribution) => HitDistribution) {
     return new AttackDistribution(
       this.dists.map(m),
-      this.followUpsRequireFirstHit,
     );
   }
 }
@@ -508,6 +472,20 @@ export function linearMinTransformer(maximum: number, offset: number = 0): HitTr
       d.addHit(new WeightedHit(
         prob,
         [new Hitsplat(Math.min(h.damage, i + offset), h.accurate)],
+      ));
+    }
+    return d.flatten();
+  };
+}
+
+export function linearMaxTransformer(maximum: number, offset: number = 0): HitTransformer {
+  return (h) => {
+    const d = new HitDistribution([]);
+    const prob = 1.0 / (maximum + 1);
+    for (let i = 0; i <= maximum; i++) {
+      d.addHit(new WeightedHit(
+        prob,
+        [new Hitsplat(Math.max(h.damage, i + offset), h.accurate)],
       ));
     }
     return d.flatten();

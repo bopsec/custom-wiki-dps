@@ -1,7 +1,7 @@
 import { EquipmentCategory } from '@/enums/EquipmentCategory';
 import { Prayer } from '@/enums/Prayer';
 import Potion from '@/enums/Potion';
-import { Spell, Spellement } from '@/types/Spell';
+import { Spell } from '@/types/Spell';
 import { PlayerCombatStyle } from '@/types/PlayerCombatStyle';
 
 export interface PlayerSkills {
@@ -143,7 +143,10 @@ export interface Player extends EquipmentStats {
      * @see https://oldschool.runescape.wiki/w/Sunfire_rune
      */
     usingSunfireRunes: boolean;
-    elementalFragments?: Partial<Record<Spellement, boolean>>;
+    fragmentOfWind: boolean;
+    fragmentOfWater: boolean;
+    fragmentOfEarth: boolean;
+    fragmentOfFire: boolean;
   };
   spell: Spell | null;
 }

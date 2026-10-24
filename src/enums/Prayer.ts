@@ -217,7 +217,7 @@ export const PrayerMap: { [k in Prayer]: PrayerData } = {
     factorDefence: [125, 100],
   },
   [Prayer.ZEAL]: {
-    renderOrder: 18.5,
+    renderOrder: 22,
     name: 'Zeal',
     image: Zeal,
     drainRate: 24,

@@ -9,7 +9,7 @@ import {
   NEX_IDS,
   NIGHTMARE_IDS,
   P3_WARDEN_IDS,
-  SOTETSEG_IDS,
+  SOTETSEG_IDS, TFA_DEF_FLOOR_NPCS,
   TOA_OBELISK_IDS,
   VARDORVIS_IDS,
   VERZIK_IDS, YAMA_IDS,
@@ -18,15 +18,6 @@ import {
 import { keys } from '@/utils';
 import { MonsterAttribute } from '@/enums/MonsterAttribute';
 import { Factor } from '@/lib/Math';
-
-const FRACTURED_ARCHIVE_CAPPED_IDS = [
-  16659, // Archive Guardian (Flying and Grounded)
-  16640, // Bork
-  16652, // Ezekiel
-  16667, // Moia
-  16684, // Xarth
-  16673, 16675, 16677, // Ocellus phases 1-3
-];
 
 export const getDefenceFloor = (m: Monster): number => {
   if (VERZIK_IDS.includes(m.id) || VARDORVIS_IDS.includes(m.id)) {
@@ -68,8 +59,8 @@ export const getDefenceFloor = (m: Monster): number => {
   if (YAMA_IDS.includes(m.id)) {
     return 145;
   }
-  if (FRACTURED_ARCHIVE_CAPPED_IDS.includes(m.id)) {
-    return Math.trunc(m.skills.def * 3 / 5);
+  if (TFA_DEF_FLOOR_NPCS.includes(m.id)) {
+    return Math.trunc(m.skills.def * 6 / 10);
   }
 
   // no limit
