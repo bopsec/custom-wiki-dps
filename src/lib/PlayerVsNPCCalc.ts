@@ -887,7 +887,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.opts.usingSpecialAttack) {
       if (this.isWearingAccursedSceptre()) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
-      } else if (this.wearing("Zorya's Tome")) {
+      } else if (this.wearing("Zorya's tome")) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [5, 2]);
       } else if (this.wearing('Volatile Nightmare staff')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
@@ -948,7 +948,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) + 1);
     } else if (this.wearing('Eye of Ayak')) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) - 6);
-    } else if (this.wearing("Zorya's Tome")) {
+    } else if (this.wearing("Zorya's tome")) {
       maxHit = Math.max(1, Math.trunc(magicLevel / 3) - 10);
     } else if (this.wearing('Warped sceptre')) {
       maxHit = Math.max(1, Math.trunc((8 * magicLevel + 96) / 37));
@@ -988,7 +988,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (this.opts.usingSpecialAttack && this.wearing('Eye of Ayak')) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [13, 10]);
     }
-    if (this.wearing("Zorya's Tome") && this.opts.usingSpecialAttack) {
+    if (this.wearing("Zorya's tome") && this.opts.usingSpecialAttack) {
       maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [8, 5]);
     }
 
@@ -1556,7 +1556,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     }
 
-    if (this.opts.usingSpecialAttack && this.wearing("Zorya's Tome")) {
+    if (this.opts.usingSpecialAttack && this.wearing("Zorya's tome")) {
       // The first hit unlocks three independently rolled, empowered follow-up hits.
       // Group their damage into one special-attack distribution for comparison.
       dist = new AttackDistribution(Array(4).fill(standardHitDist), true);
@@ -1647,7 +1647,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       dist = new AttackDistribution(hits);
     }
 
-    if (this.isUsingMeleeStyle() && this.wearing(['The Obligator', 'The Breaker']) && this.player.style.name === 'Thrust') {
+    if (this.isUsingMeleeStyle() && this.wearing('Obligator') && this.player.style.name === 'Thrust') {
       const crush = this.monster.defensive.crush;
       const rolls = 2 + Number(this.monster.defensive.stab > crush) + Number(this.monster.defensive.slash > crush);
       const sizeBonus = Math.min(Math.max(this.monster.size - 1, 0), 2);
@@ -2148,7 +2148,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
   }
 
   public getExpectedAttackSpeed() {
-    if (this.opts.usingSpecialAttack && this.wearing("Zorya's Tome")) {
+    if (this.opts.usingSpecialAttack && this.wearing("Zorya's tome")) {
       const firstHitChance = sum(
         this.getDistribution().dists[0].hits.filter((hit) => hit.anyAccurate()),
         (hit) => hit.probability,

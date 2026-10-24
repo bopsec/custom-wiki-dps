@@ -1,10 +1,12 @@
 import { describe, expect, test } from '@jest/globals';
 import { Prayer } from '@/enums/Prayer';
-import { ammoApplicability, AmmoApplicability } from '@/lib/Equipment';
+import { ammoApplicability, AmmoApplicability, availableEquipment } from '@/lib/Equipment';
 import { getMonsters, INITIAL_MONSTER_INPUTS } from '@/lib/Monsters';
 import PlayerVsNPCCalc from '@/lib/PlayerVsNPCCalc';
 import { getSpecSwapAttackOutcomes } from '@/lib/SpecWeaponSwap';
 import applyDefenceReductions, { getDefenceFloor } from '@/lib/scaling/DefenceReduction';
+import { parseLoadoutsFromImportedData } from '@/state';
+import { ImportableData } from '@/types/State';
 import {
   calculateNpcVsPlayer, calculatePlayerVsNpc, findEquipment, findSpell,
   getTestMonsterById, getTestPlayer,
@@ -13,9 +15,22 @@ import {
 const target = getTestMonsterById(415);
 
 describe('Fractured Archive rewards', () => {
+  test('released equipment replaces temporary IDs in saved loadouts', () => {
+    expect(availableEquipment.some((item) => item.id <= -40001 && item.id >= -40007)).toBe(false);
+    const oldLoadout = (id: number, name: string) => ({ equipment: { weapon: { id, name, slot: 'weapon' } } });
+    const imported = parseLoadoutsFromImportedData({
+      serializationVersion: 0,
+      selectedLoadout: 0,
+      monster: target,
+      loadouts: [oldLoadout(-40003, 'The Obligator'), oldLoadout(-40002, "Zorya's Tome")],
+    } as ImportableData);
+    expect(imported[0].equipment?.weapon?.id).toBe(34715);
+    expect(imported[1].equipment?.weapon?.id).toBe(34725);
+  });
+
   test('Fractured Archive Defence reductions stop at each NPC\'s floor', () => {
-    const cappedIds = [16659, 16660, 16640, 16652, 16667, 16684, 16674, 16675, 16677];
-    const uncappedIds = [16665, 16641, 16643, 16644, 16676];
+    const cappedIds = [16659, 16640, 16652, 16667, 16684, 16673, 16675, 16677];
+    const uncappedIds = [16665, 16641, 16643, 16645, 16647, 16676];
     const monsters = getMonsters();
 
     for (const id of [...cappedIds, ...uncappedIds]) {
@@ -34,51 +49,18 @@ describe('Fractured Archive rewards', () => {
     }
   });
 
-  test('Fractured Archive NPCs include the supplied combat stats and ranged defence', () => {
-    const ids = [
-      16659, 16660, 16662, 16640, 16641, 16643, 16644, 16649, 16650,
-      16651, 16652, 16653, 16665, 16666, 16667, 16670, 16684, 16687,
-      16688, 16674, 16675, 16677, 16676, 16678, 16679, 16680, 16681,
-    ];
-    const rangedDefence: Record<number, [number, number, number]> = {
-      16659: [75, 120, 50],
-      16660: [75, 120, 50],
-      16640: [80, 50, 5],
-      16641: [80, 150, 80],
-      16652: [445, 370, 320],
-      16665: [100, 80, 80],
-      16667: [60, 120, 140],
-      16684: [125, 230, 155],
-      16674: [50, 135, 50],
-      16675: [100, 110, 80],
-      16677: [250, 250, 250],
-    };
-    const weaknesses: Record<number, { element: string, severity: number }> = {
-      16659: { element: 'fire', severity: 80 },
-      16660: { element: 'fire', severity: 80 },
-      16666: { element: 'fire', severity: 80 },
-      16640: { element: 'earth', severity: 40 },
-      16641: { element: 'earth', severity: 85 },
-      16652: { element: 'earth', severity: 25 },
-      16684: { element: 'water', severity: 85 },
-    };
+  test('upstream NPC records replace provisional stats while missing phases retain fallbacks', () => {
     const monsters = getMonsters();
-    for (const id of ids) {
-      const monster = monsters.find((m) => m.id === id);
-      const [light, standard, heavy] = rangedDefence[id] || [50, 50, 50];
-      expect(monster).toBeDefined();
-      expect(monster?.name.startsWith('Frac ')).toBe(true);
-      expect(monster?.defensive.light).toBe(light);
-      expect(monster?.defensive.standard).toBe(standard);
-      expect(monster?.defensive.heavy).toBe(heavy);
-      expect(monster?.weakness).toEqual(weaknesses[id] || null);
-    }
-
-    expect(monsters.find((m) => m.id === 16659)?.skills.hp).toBe(550);
-    expect(monsters.find((m) => m.id === 16660)?.skills.hp).toBe(1100);
-    expect(monsters.find((m) => m.id === 16688)?.defensive.crush).toBe(-20);
-    expect(monsters.find((m) => m.id === 16675)?.skills.hp).toBe(5250);
-    expect(monsters.find((m) => m.id === 16677)?.skills.hp).toBe(5250);
+    const guardian = monsters.filter((m) => m.id === 16659);
+    expect(guardian.map((m) => m.version)).toEqual(['Flying', 'Grounded']);
+    expect(guardian.map((m) => m.weakness?.severity)).toEqual([80, 40]);
+    expect(monsters.find((m) => m.id === 16673)?.name).toBe('Ocellus');
+    expect(monsters.find((m) => m.id === 16673)?.version).toBe('Phase 1');
+    expect(monsters.find((m) => m.id === 16667)?.weakness).toEqual({ element: 'air', severity: 80 });
+    expect(monsters.find((m) => m.id === 16666)?.weakness).toEqual({ element: 'fire', severity: 60 });
+    expect(monsters.find((m) => m.id === 16675)?.name).toBe('Frac Ocellus');
+    expect(monsters.find((m) => m.id === 16676)?.name).toBe('Frac The Blade');
+    expect(monsters.some((m) => m.id === 16674)).toBe(false);
   });
 
   test('unknown NPC attack speed does not produce non-finite damage taken', () => {
@@ -101,7 +83,7 @@ describe('Fractured Archive rewards', () => {
   });
 
   test('the Obligator rolls more damage against crush weakness and scales with size', () => {
-    const weapon = findEquipment('The Obligator');
+    const weapon = findEquipment('Obligator');
     const neutral = getTestMonsterById(415, {
       size: 1,
       defensive: { stab: 50, slash: 50, crush: 50 },
@@ -137,7 +119,7 @@ describe('Fractured Archive rewards', () => {
 
   test('size-adjusted Obligator rolls retain every damage value through the final max', () => {
     const monster = { ...getTestMonsterById(415), size: 3 };
-    const weapon = findEquipment('The Obligator');
+    const weapon = findEquipment('Obligator');
     const setup = (name: 'Smash' | 'Thrust', strengthBonus: number) => getTestPlayer(monster, {
       equipment: { weapon },
       bonuses: { str: strengthBonus },
@@ -160,7 +142,7 @@ describe('Fractured Archive rewards', () => {
   });
 
   test('Zorya base hit scales with Magic level before its damage bonuses', () => {
-    const weapon = findEquipment("Zorya's Tome");
+    const weapon = findEquipment("Zorya's tome");
     for (const [magic, normalMax, specMax] of [
       [80, 18, 112],
       [90, 23, 144],
@@ -177,7 +159,7 @@ describe('Fractured Archive rewards', () => {
   });
 
   test('Zorya special groups four independent rolls gated by its first hit', () => {
-    const weapon = findEquipment("Zorya's Tome");
+    const weapon = findEquipment("Zorya's tome");
     const player = getTestPlayer(target, { equipment: { weapon } });
     const normal = new PlayerVsNPCCalc(player, target);
     const spec = new PlayerVsNPCCalc(player, target, { usingSpecialAttack: true });

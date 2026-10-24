@@ -148,6 +148,22 @@ export const generateEmptyPlayer = (name?: string): Player => ({
   spell: null,
 });
 
+const releasedFracturedItemIds: Record<number, number> = {
+  [-40001]: 34719, // Rondache
+  [-40002]: 34725, // Zorya's tome (charged)
+  [-40003]: 34715, // Obligator (charged)
+  [-40004]: 34681, // Ascension crossbows
+  [-40005]: 34684, // Ascension bolts
+  [-40006]: 34696, // Diamond ascension bolts (e)
+  [-40007]: 34708, // Onyx ascension bolts (e)
+};
+
+const releasedFracturedMonsterIds: Record<number, { id: number, version: string }> = {
+  16660: { id: 16659, version: 'Grounded' }, // Archive Guardian
+  16644: { id: 16645, version: 'Staff' }, // Dagon'hai Monk
+  16674: { id: 16673, version: 'Phase 1' }, // Ocellus
+};
+
 export const parseLoadoutsFromImportedData = (data: ImportableData) => data.loadouts.map((loadout, i) => {
   // For each item, reload the most current data using the item ID to ensure we're not using stale data.
   if (loadout.equipment) {
@@ -156,10 +172,10 @@ export const parseLoadoutsFromImportedData = (data: ImportableData) => data.load
       let item: EquipmentPiece | undefined;
       if (Object.hasOwn(v, 'id')) {
         item = availableEquipment.find((eq) => eq.id === v.id);
-        // Provisional raid rewards use negative IDs until the wiki assigns real ones.
-        // Resolve older saved loadouts by name after an upstream equipment refresh.
+        // Resolve saved loadouts made with provisional Fractured Archive item IDs.
         if (!item && typeof v.id === 'number' && v.id < 0) {
-          item = availableEquipment.find((eq) => eq.name === v.name && eq.slot === v.slot);
+          item = availableEquipment.find((eq) => eq.id === releasedFracturedItemIds[v.id as number])
+            || availableEquipment.find((eq) => eq.name === v.name && eq.slot === v.slot);
         }
         if (item) {
           // include the hidden itemVars inputs that are not present on the availableEquipment store
@@ -550,7 +566,9 @@ class GlobalState implements State {
       let newMonster: PartialDeep<Monster> = {};
 
       if (data.monster.id > -1) {
-        const monstersById = getMonsters().filter((m) => m.id === data.monster.id);
+        const migrated = releasedFracturedMonsterIds[data.monster.id];
+        const monsterId = migrated?.id ?? data.monster.id;
+        const monstersById = getMonsters().filter((m) => m.id === monsterId);
         if ((monstersById?.length || 0) === 0) {
           throw new Error(`Failed to find monster by id '${data.monster.id}' from shortlink`);
         }
@@ -558,7 +576,7 @@ class GlobalState implements State {
         if (monstersById.length === 1) {
           newMonster = monstersById[0];
         } else {
-          const version = monstersById.find((m) => m.version === data.monster.version);
+          const version = monstersById.find((m) => m.version === (migrated?.version ?? data.monster.version));
           if (version) {
             newMonster = version;
           } else {

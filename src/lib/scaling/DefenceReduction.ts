@@ -20,12 +20,12 @@ import { MonsterAttribute } from '@/enums/MonsterAttribute';
 import { Factor } from '@/lib/Math';
 
 const FRACTURED_ARCHIVE_CAPPED_IDS = [
-  16659, 16660, // Archive Guardian
+  16659, // Archive Guardian (Flying and Grounded)
   16640, // Bork
   16652, // Ezekiel
   16667, // Moia
   16684, // Xarth
-  16674, 16675, 16677, // Ocellus phases 1-3
+  16673, 16675, 16677, // Ocellus phases 1-3
 ];
 
 export const getDefenceFloor = (m: Monster): number => {
