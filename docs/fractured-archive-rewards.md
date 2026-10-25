@@ -10,6 +10,6 @@ the released NPC Defence floors. The Wiki's NPC stats supersede our provisional 
 Older saved loadouts with temporary reward IDs map to the released items. Older saved
 selections for Archive Guardian, Dagon'hai Monk, and Ocellus phase 1 map to the Wiki IDs.
 
-The Wiki implementation currently flags Rondache's special attack and Zorya's tome's
-follow-up special attacks as unsupported. Its single-target model also does not represent
-Obligator hitting separate NPCs in a line.
+This fork restores Zorya's tome's gated follow-up special attacks from its pre-merge
+implementation. Rondache's special attack remains unsupported. The calculator's
+single-target model also does not represent Obligator hitting separate NPCs in a line.

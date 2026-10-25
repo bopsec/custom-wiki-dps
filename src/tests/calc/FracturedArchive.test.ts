@@ -4,6 +4,8 @@ import { ammoApplicability, AmmoApplicability, availableEquipment } from '@/lib/
 import { getMonsters, INITIAL_MONSTER_INPUTS } from '@/lib/Monsters';
 import applyDefenceReductions, { getDefenceFloor } from '@/lib/scaling/DefenceReduction';
 import applyMonsterPhases from '@/lib/scaling/Phases';
+import PlayerVsNPCCalc from '@/lib/PlayerVsNPCCalc';
+import { getSpecSwapAttackOutcomes } from '@/lib/SpecWeaponSwap';
 import { parseLoadoutsFromImportedData } from '@/state';
 import { ImportableData } from '@/types/State';
 import { getCombatStylesForCategory } from '@/utils';
@@ -14,6 +16,30 @@ import {
 const target = getTestMonsterById(415);
 
 describe('Fractured Archive upstream implementation', () => {
+  test('Zorya special gates three follow-up hits on the first hit', () => {
+    const weapon = findEquipment("Zorya's tome");
+    const player = getTestPlayer(target, { equipment: { weapon } });
+    const normal = new PlayerVsNPCCalc(player, target);
+    const spec = new PlayerVsNPCCalc(player, target, { usingSpecialAttack: true });
+    const accuracy = spec.getHitChance();
+    const distribution = spec.getDistribution();
+    const singleHitDamage = distribution.dists[0].expectedHit();
+    const outcomes = getSpecSwapAttackOutcomes(spec);
+
+    expect(normal.getDistribution().dists).toHaveLength(1);
+    expect(distribution.dists).toHaveLength(4);
+    expect(distribution.followUpsRequireFirstHit).toBe(true);
+    expect(spec.getMax()).toBe(distribution.dists[0].getMax() * 4);
+    expect(spec.getExpectedDamage()).toBeCloseTo(singleHitDamage * (1 + 3 * accuracy));
+    expect(distribution.singleHitsplat.expectedHit()).toBeCloseTo(spec.getExpectedDamage());
+    expect(spec.getExpectedAttackSpeed()).toBeCloseTo(spec.getAttackSpeed() + 6 * accuracy);
+    expect(outcomes.filter((outcome) => outcome.successfulHits === 0)
+      .reduce((sum, outcome) => sum + outcome.probability, 0)).toBeCloseTo(1 - accuracy);
+    expect(outcomes.filter((outcome) => outcome.successfulHits === 4)
+      .reduce((sum, outcome) => sum + outcome.probability, 0)).toBeCloseTo(accuracy ** 4);
+    expect(outcomes.reduce((sum, outcome) => sum + outcome.probability, 0)).toBeCloseTo(1);
+  });
+
   test('released equipment replaces provisional IDs in saved loadouts', () => {
     expect(availableEquipment.some((item) => item.id <= -40001 && item.id >= -40007)).toBe(false);
     const oldLoadout = (id: number, name: string) => ({ equipment: { weapon: { id, name, slot: 'weapon' } } });

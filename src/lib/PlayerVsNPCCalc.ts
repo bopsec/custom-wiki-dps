@@ -94,7 +94,6 @@ import getSpellMaxHit from '@/types/SpellMax';
 
 const PARTIALLY_IMPLEMENTED_SPECS: string[] = [
   'Ancient godsword',
-  "Zorya's tome", // missing the follow-up attack buffs
 ];
 
 // https://oldschool.runescape.wiki/w/Category:Weapons_with_Special_attacks
@@ -1576,6 +1575,11 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     }
 
+    if (this.opts.usingSpecialAttack && this.wearing("Zorya's tome")) {
+      // The first hit unlocks three independently rolled follow-up hits.
+      dist = new AttackDistribution(Array(4).fill(standardHitDist), true);
+    }
+
     if (this.opts.usingSpecialAttack && this.wearing('Abyssal dagger')) {
       const secondHit = HitDistribution.linear(1.0, min, max);
       dist = dist.transform((h) => new HitDistribution([new WeightedHit(1.0, [h])]).zip(secondHit), { transformInaccurate: false });
@@ -2152,6 +2156,14 @@ export default class PlayerVsNPCCalc extends BaseCalc {
   }
 
   public getExpectedAttackSpeed() {
+    if (this.opts.usingSpecialAttack && this.wearing("Zorya's tome")) {
+      const firstHitChance = sum(
+        this.getDistribution().dists[0].hits.filter((hit) => hit.anyAccurate()),
+        (hit) => hit.probability,
+      );
+      return this.getAttackSpeed() + 6 * firstHitChance;
+    }
+
     if (this.isWearingBloodMoonSet()) {
       const acc = this.getHitChance();
       const procChance = this.opts.usingSpecialAttack
@@ -2295,6 +2307,22 @@ export default class PlayerVsNPCCalc extends BaseCalc {
    * Because the result will not be densely populated (unless attack speed is 1),
    * it is an object where keys are tick counts and values are probabilities.
    */
+  private getDelayedHitDistribution(preserveHitsplats = false): DelayedHit[] {
+    const dist = this.getDistribution();
+    if (dist.followUpsRequireFirstHit) {
+      const followUpSum = dist.dists.slice(1)
+        .reduce((previous, next) => previous.zip(next).cumulative());
+      return dist.dists[0].hits.flatMap((first): DelayedHit[] => (
+        first.anyAccurate()
+          ? new HitDistribution([first]).zip(followUpSum).cumulative().hits
+            .map((hit) => [hit, this.getAttackSpeed() + 6])
+          : [[first, this.getAttackSpeed()]]
+      ));
+    }
+    return (preserveHitsplats ? dist.zipped : dist.singleHitsplat)
+      .withProbabilisticDelays(this.getWeaponDelayProvider());
+  }
+
   public getTtkDistribution(): Map<number, number> {
     if (this.getDistribution()
       .getExpectedDamage() === 0) { // todo thralls, allow thrall-only compute?
@@ -2305,9 +2333,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     const speed = this.getAttackSpeed();
     const iterMax = TTK_DIST_MAX_ITER_ROUNDS * speed;
 
-    const playerDist = this.getDistribution()
-      .singleHitsplat
-      .withProbabilisticDelays(this.getWeaponDelayProvider());
+    const playerDist = this.getDelayedHitDistribution();
 
     // dist attack-on-specific-tick probabilities
     // todo thralls, append here
@@ -2427,7 +2453,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }),
     );
 
-    return subCalc.getDistribution().zipped.withProbabilisticDelays(this.getWeaponDelayProvider());
+    return subCalc.getDelayedHitDistribution(true);
   }
 
   // a computational shortcut for internal class use only
