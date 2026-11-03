@@ -20,8 +20,7 @@ import {
   IconInfoCircle,
   IconSwords,
 } from '@tabler/icons-react';
-import { toJS } from 'mobx';
-import { useStore } from '@/state';
+import { useStore } from '@/state/RootStore';
 import SectionAccordion from '@/app/components/generic/SectionAccordion';
 import NumberInput from '@/app/components/generic/NumberInput';
 import { WORKER_JSON_REPLACER, WORKER_JSON_REVIVER } from '@/utils';
@@ -439,8 +438,8 @@ const SpecWeaponSwap: React.FC = observer(() => {
   const [maxSpecs, setMaxSpecs] = useState(4);
   const [isOpen, setIsOpen] = useState(false);
   const [expandedResult, setExpandedResult] = useState<string | null>(null);
-  const loadouts = toJS(store.loadouts);
-  const monster = toJS(store.monster);
+  const loadouts = store.loadouts.loadouts.map((loadout) => loadout.snapshot);
+  const monster = store.monster.snapshot;
   const loadoutsKey = JSON.stringify(loadouts);
   const monsterKey = JSON.stringify(monster);
   const loadoutsSnapshot = useMemo(() => JSON.parse(loadoutsKey) as Player[], [loadoutsKey]);

@@ -27,6 +27,7 @@ import {
   ABYSSAL_SIRE_TRANSITION_IDS,
   ALWAYS_MAX_HIT_MONSTERS,
   BA_ATTACKER_MONSTERS,
+  DEFAULT_ATTACK_SPEED,
   DOOM_OF_MOKHAIOTL_IDS,
   ECLIPSE_MOON_IDS,
   GLOWING_CRYSTAL_IDS,
@@ -43,12 +44,14 @@ import {
   MAD_ANGEL_IDS,
   MAGGOT_KING_ID,
   NIGHTMARE_TOTEM_IDS,
+  OCELLUS_P3_IDS,
   OLM_HEAD_IDS,
   OLM_MAGE_HAND_IDS,
   OLM_MELEE_HAND_IDS,
   ONE_HIT_MONSTERS,
   P2_WARDEN_IDS,
   SECONDS_PER_TICK,
+  TANGLEFOOT_IDS,
   TEKTON_IDS,
   TITAN_BOSS_IDS,
   TITAN_ELEMENTAL_IDS,
@@ -345,6 +348,27 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     const { buffs } = this.player;
 
     const baseLevel: number = this.trackAdd(DetailKey.DAMAGE_LEVEL, this.player.skills.str, this.player.boosts.str);
+    const gearBonus = this.trackAdd(DetailKey.DAMAGE_GEAR_BONUS, this.player.bonuses.str, 64);
+
+    if (TANGLEFOOT_IDS.includes(this.monster.id) && this.wearing(['Magic secateurs', 'Magic secateurs (nz)'])) {
+      // Farming level / 5 is added to strength bonus when using magic secateurs against tanglefooti
+      const farmingLevel = this.player.skills.farming + this.player.boosts.farming;
+      const farmingBonus = Math.trunc(farmingLevel / 5);
+      const farmingGearBonus = this.track(
+        DetailKey.DAMAGE_GEAR_BONUS_FARMING,
+        gearBonus + farmingBonus,
+        `${gearBonus} + (${farmingLevel} / 5) = ${gearBonus + farmingBonus}`,
+      );
+
+      // Prayers and stance bonus aren't included in calculating the max hit here
+      const baseMax = this.trackMaxHitFromEffective(DetailKey.MAX_HIT_BASE, baseLevel, farmingGearBonus);
+
+      // For some reason, 1 is subtracted at the end
+      const maxHit = this.track(DetailKey.MAX_HIT_TANGLEFOOT, Math.max(0, baseMax - 1), `max(0, ${baseMax} - 1) = ${Math.max(0, baseMax - 1)}`);
+
+      return [0, maxHit];
+    }
+
     let effectiveLevel: number = baseLevel;
 
     for (const p of this.getCombatPrayers()) {
@@ -376,7 +400,6 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       effectiveLevel = this.trackFactor(DetailKey.DAMAGE_EFFECTIVE_LEVEL_VOID, effectiveLevel, [11, 10]);
     }
 
-    const gearBonus = this.trackAdd(DetailKey.DAMAGE_GEAR_BONUS, this.player.bonuses.str, 64);
     const baseMax = this.trackMaxHitFromEffective(DetailKey.MAX_HIT_BASE, effectiveLevel, gearBonus);
     let [minHit, maxHit]: MinMax = [0, baseMax];
 
@@ -1845,9 +1868,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         dist = dist.transform(pearlBolts(boltContext));
       } else if (this.wearing(['Diamond bolts (e)', 'Diamond dragon bolts (e)', 'Diamond ascension bolts (e)'])) {
         dist = dist.transform(diamondBolts(boltContext));
-      } else if (this.wearing(['Dragonstone bolts (e)', 'Dragonstone dragon bolts (e)', 'Onyx ascension bolts (e)'])) {
+      } else if (this.wearing(['Dragonstone bolts (e)', 'Dragonstone dragon bolts (e)'])) {
         dist = dist.transform(dragonstoneBolts(boltContext));
-      } else if (this.wearing(['Onyx bolts (e)', 'Onyx dragon bolts (e)']) && !mattrs.includes(MonsterAttribute.UNDEAD)) {
+      } else if (this.wearing(['Onyx bolts (e)', 'Onyx dragon bolts (e)', 'Onyx ascension bolts (e)']) && !mattrs.includes(MonsterAttribute.UNDEAD)) {
         dist = dist.transform(onyxBolts(boltContext));
       }
     }
@@ -2069,9 +2092,27 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       relevantEffects.push([divisionTransformer(2)]);
     }
 
+    if (OCELLUS_P3_IDS.includes(this.monster.id) && this.monster.inputs.phase?.startsWith('Phase 4 Explosions')) {
+      // weird reduction
+      // 2 / attack_speed * damage + (rand() < 0.5 ? 1 : 0)
+      const factor = 2 / (this.player.equipment.weapon?.speed ?? DEFAULT_ATTACK_SPEED); // no trunc
+      relevantEffects.push([(h) => {
+        const reduction = Math.trunc(factor * h.damage);
+        return new HitDistribution([
+          new WeightedHit(0.5, [new Hitsplat(Math.max(0, h.damage - reduction))]),
+          new WeightedHit(0.5, [new Hitsplat(Math.max(0, h.damage - reduction - 1))]),
+        ]);
+      }]);
+    }
+
     const flatArmour = this.monster.defensive.flat_armour;
     if (flatArmour && styleType !== 'magic') {
       relevantEffects.push([flatAddTransformer(-flatArmour), { transformInaccurate: false }]);
+    }
+
+    const magicResistance = this.monster.defensive.magic_resistance;
+    if (magicResistance && styleType === 'magic') {
+      relevantEffects.push([flatAddTransformer(-magicResistance), { transformInaccurate: false }]);
     }
 
     const transformer: HitTransformer = (hitsplat) => {
@@ -2141,6 +2182,9 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     }
     // Eclipse Moon clone is immune to non-melee attacks
     if (ECLIPSE_MOON_IDS.includes(this.monster.id) && this.monster.version === 'Clone' && !this.isUsingMeleeStyle()) {
+      return true;
+    }
+    if (TANGLEFOOT_IDS.includes(this.monster.id) && !(this.wearing(['Magic secateurs', 'Magic secateurs (nz)']) && this.isUsingMeleeStyle())) {
       return true;
     }
 

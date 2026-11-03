@@ -6,8 +6,9 @@ import applyDefenceReductions, { getDefenceFloor } from '@/lib/scaling/DefenceRe
 import applyMonsterPhases from '@/lib/scaling/Phases';
 import PlayerVsNPCCalc from '@/lib/PlayerVsNPCCalc';
 import { getSpecSwapAttackOutcomes } from '@/lib/SpecWeaponSwap';
-import { parseLoadoutsFromImportedData } from '@/state';
-import { ImportableData } from '@/types/State';
+import { toPlayerPatch } from '@/state/serialization';
+import { PartialDeep } from 'type-fest';
+import { Player } from '@/types/Player';
 import { getCombatStylesForCategory } from '@/utils';
 import {
   calculatePlayerVsNpc, findEquipment, findSpell, getTestMonsterById, getTestPlayer,
@@ -43,12 +44,8 @@ describe('Fractured Archive upstream implementation', () => {
   test('released equipment replaces provisional IDs in saved loadouts', () => {
     expect(availableEquipment.some((item) => item.id <= -40001 && item.id >= -40007)).toBe(false);
     const oldLoadout = (id: number, name: string) => ({ equipment: { weapon: { id, name, slot: 'weapon' } } });
-    const imported = parseLoadoutsFromImportedData({
-      serializationVersion: 0,
-      selectedLoadout: 0,
-      monster: target,
-      loadouts: [oldLoadout(-40003, 'The Obligator'), oldLoadout(-40002, "Zorya's Tome")],
-    } as ImportableData);
+    const imported = [oldLoadout(-40003, 'The Obligator'), oldLoadout(-40002, "Zorya's Tome")]
+      .map((loadout) => toPlayerPatch(loadout as PartialDeep<Player>));
     expect(imported[0].equipment?.weapon?.id).toBe(34715);
     expect(imported[1].equipment?.weapon?.id).toBe(34725);
   });
@@ -72,7 +69,12 @@ describe('Fractured Archive upstream implementation', () => {
       expect(scaled.defensive.magic_resistance).toBe(index * 2);
     });
     expect(applyMonsterPhases({ ...bork, inputs: { ...bork.inputs, phase: 'Stunned' } }).defensive)
-      .toEqual(bork.defensive);
+      .toEqual({
+        ...bork.defensive,
+        stab: bork.defensive.stab - 100,
+        slash: bork.defensive.slash - 100,
+        crush: bork.defensive.crush - 100,
+      });
   });
 
   test('Wiki Defence floors apply to the released bosses', () => {

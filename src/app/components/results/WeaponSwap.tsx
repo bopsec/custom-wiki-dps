@@ -1,4 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
 import {
   CartesianGrid,
   Legend,
@@ -11,12 +13,13 @@ import {
   YAxis,
 } from 'recharts';
 import { observer } from 'mobx-react-lite';
-import { toJS } from 'mobx';
+import { WORKER_JSON_REPLACER, WORKER_JSON_REVIVER } from '@/utils';
+import type { WeaponSwapResult, WeaponSwapMode, WeaponSwapRange } from '@/lib/WeaponSwap';
+import type { WeaponSwapWorkerResponse } from '@/worker/weaponSwapWorker';
 import { max } from 'd3-array';
 import { IconArrowsExchange, IconAlertTriangle } from '@tabler/icons-react';
-import { useStore } from '@/state';
+import { useStore } from '@/state/RootStore';
 import SectionAccordion from '@/app/components/generic/SectionAccordion';
-import type { WeaponSwapMode, WeaponSwapRange } from '@/lib/WeaponSwap';
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 
 enum SwapMode {
@@ -108,10 +111,36 @@ const CustomTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({
 
 const WeaponSwap: React.FC = observer(() => {
   const store = useStore();
-  const { showWeaponSwap } = store.prefs;
-  const result = toJS(store.calc.weaponSwap);
-  const swapError = store.calc.weaponSwapError;
-  const loadouts = toJS(store.loadouts);
+  const { showWeaponSwap } = store.preferences;
+  const [result, setResult] = useState<WeaponSwapResult | null>(null);
+  const [swapError, setSwapError] = useState<string | null>(null);
+  const loadouts = store.loadouts.loadouts.map((loadout) => loadout.snapshot);
+  const requestKey = JSON.stringify({
+    loadouts,
+    monster: store.monster.snapshot,
+    calcOpts: { disableMonsterScaling: store.monster.isCustom },
+  }, WORKER_JSON_REPLACER);
+  useEffect(() => {
+    setResult(null);
+    setSwapError(null);
+    if (!showWeaponSwap) return undefined;
+    let cancelled = false;
+    const worker = new Worker(new URL('../../../worker/weaponSwapWorker.ts', import.meta.url));
+    worker.onmessage = (event: MessageEvent<string>) => {
+      if (!cancelled) {
+        const response = JSON.parse(event.data, WORKER_JSON_REVIVER) as WeaponSwapWorkerResponse;
+        setResult(response.error ? null : response.payload ?? null);
+        setSwapError(response.error ?? null);
+      }
+      worker.terminate();
+    };
+    worker.onerror = (event: ErrorEvent) => {
+      if (!cancelled) setSwapError(event.message || 'Unable to calculate weapon swaps.');
+      worker.terminate();
+    };
+    worker.postMessage(requestKey);
+    return () => { cancelled = true; worker.terminate(); };
+  }, [requestKey, showWeaponSwap]);
   const [mode, setMode] = useState(modeOptions[0]);
 
   const activeResult: WeaponSwapMode | undefined = useMemo(() => {
@@ -165,7 +194,7 @@ const WeaponSwap: React.FC = observer(() => {
   return (
     <SectionAccordion
       defaultIsOpen={showWeaponSwap}
-      onIsOpenChanged={(o) => store.updatePreferences({ showWeaponSwap: o })}
+      onIsOpenChanged={(o) => store.preferences.update({ showWeaponSwap: o })}
       title={(
         <div className="flex items-center gap-2">
           <IconArrowsExchange size={22} />
