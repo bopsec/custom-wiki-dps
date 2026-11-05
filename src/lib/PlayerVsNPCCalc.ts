@@ -27,7 +27,6 @@ import {
   ABYSSAL_SIRE_TRANSITION_IDS,
   ALWAYS_MAX_HIT_MONSTERS,
   BA_ATTACKER_MONSTERS,
-  DEFAULT_ATTACK_SPEED,
   DOOM_OF_MOKHAIOTL_IDS,
   ECLIPSE_MOON_IDS,
   GLOWING_CRYSTAL_IDS,
@@ -499,7 +498,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     }
 
-    if (this.wearing('Obligator') && this.monster.size >= 2 && this.player.style.name !== 'Smash') {
+    if (this.getsObligatorPassive() && this.monster.size >= 2) {
       // todo placement? mostly relative to inq bonus / is it post-roll?
       const bonus = this.monster.size === 2 ? 20 : 40;
       maxHit = this.trackFactor(DetailKey.MAX_HIT_OBLIGATOR, maxHit, [100 + bonus, 100]);
@@ -1510,7 +1509,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       }
     }
 
-    if (this.isUsingMeleeStyle() && this.wearing('Obligator') && this.player.style.name !== 'Smash') {
+    if (this.getsObligatorPassive()) {
       // todo can't wait to learn how this interacts with min hits next leagues
       const rerolls = 2
         + (this.monster.defensive.stab > this.monster.defensive.crush ? 1 : 0)
@@ -2095,14 +2094,14 @@ export default class PlayerVsNPCCalc extends BaseCalc {
     if (OCELLUS_P3_IDS.includes(this.monster.id) && this.monster.inputs.phase?.startsWith('Phase 4 Explosions')) {
       // weird reduction
       // 2 / attack_speed * damage + (rand() < 0.5 ? 1 : 0)
-      const factor = 2 / (this.player.equipment.weapon?.speed ?? DEFAULT_ATTACK_SPEED); // no trunc
+      const factor = 2 / this.getAttackSpeed(); // no trunc
       relevantEffects.push([(h) => {
-        const reduction = Math.trunc(factor * h.damage);
+        const newDamage = Math.trunc(factor * h.damage);
         return new HitDistribution([
-          new WeightedHit(0.5, [new Hitsplat(Math.max(0, h.damage - reduction))]),
-          new WeightedHit(0.5, [new Hitsplat(Math.max(0, h.damage - reduction - 1))]),
+          new WeightedHit(0.5, [new Hitsplat(Math.max(0, newDamage))]),
+          new WeightedHit(0.5, [new Hitsplat(Math.max(0, newDamage + 1))]),
         ]);
-      }]);
+      }, { transformInaccurate: false }]);
     }
 
     const flatArmour = this.monster.defensive.flat_armour;
@@ -2200,6 +2199,10 @@ export default class PlayerVsNPCCalc extends BaseCalc {
   }
 
   public getExpectedAttackSpeed() {
+    if (OCELLUS_P3_IDS.includes(this.monster.id) && this.monster.inputs.phase === 'Phase 4 Explosions - With Speed-Up') {
+      return 2;
+    }
+
     if (this.opts.usingSpecialAttack && this.wearing("Zorya's tome")) {
       const firstHitChance = sum(
         this.getDistribution().dists[0].hits.filter((hit) => hit.anyAccurate()),

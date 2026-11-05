@@ -41,6 +41,22 @@ describe('Fractured Archive upstream implementation', () => {
     expect(outcomes.reduce((sum, outcome) => sum + outcome.probability, 0)).toBeCloseTo(1);
   });
 
+  test('Ocellus explosion speed-up coexists with the Zorya special', () => {
+    const ocellus = getTestMonsterById(16677);
+    const weapon = findEquipment("Zorya's tome");
+    const player = getTestPlayer(ocellus, { equipment: { weapon } });
+    const withPhase = (phase: string) => new PlayerVsNPCCalc(player, {
+      ...ocellus, inputs: { ...ocellus.inputs, phase },
+    }, { usingSpecialAttack: true });
+    const spedUp = withPhase('Phase 4 Explosions - With Speed-Up');
+    const normal = withPhase('Phase 4 Explosions - No Speed-Up');
+
+    expect(spedUp.getExpectedAttackSpeed()).toBe(2);
+    expect(normal.getExpectedAttackSpeed()).toBeGreaterThan(normal.getAttackSpeed());
+    expect(spedUp.getDistribution().followUpsRequireFirstHit).toBe(true);
+    expect(normal.getDistribution().dists).toHaveLength(4);
+  });
+
   test('released equipment replaces provisional IDs in saved loadouts', () => {
     expect(availableEquipment.some((item) => item.id <= -40001 && item.id >= -40007)).toBe(false);
     const oldLoadout = (id: number, name: string) => ({ equipment: { weapon: { id, name, slot: 'weapon' } } });
