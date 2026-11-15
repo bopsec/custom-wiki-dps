@@ -425,7 +425,7 @@ export const WEAPON_SPEC_COSTS: { [canonicalName: string]: number } = {
   'Magic longbow': 35,
   'Magic comp bow': 35,
 
-  'Dragon sword': 40,
+  'Dragon shortsword': 40,
 
   'Elder maul': 50,
   'Dragon warhammer': 50,

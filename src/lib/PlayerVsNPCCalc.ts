@@ -164,7 +164,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         'Arkan blade',
       ]) || this.isWearingGodsword()) {
         defenceStyle = 'slash';
-      } else if (this.wearing(['Arclight', 'Emberlight', 'Dragon sword'])) {
+      } else if (this.wearing(['Arclight', 'Emberlight', 'Dragon shortsword'])) {
         defenceStyle = 'stab';
       } else if (this.wearing(['Voidwaker', "Saradomin's blessed sword"])) {
         // doesn't really matter for voidwaker since it's 100% accuracy but eh
@@ -318,7 +318,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [2, 1]);
       } else if (this.isWearingFang() || this.wearing('Arkan blade') || this.wearing('Granite hammer')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [3, 2]);
-      } else if (this.wearing(['Elder maul', 'Dragon mace', 'Dragon sword', 'Dragon scimitar', 'Abyssal whip'])) {
+      } else if (this.wearing(['Elder maul', 'Dragon mace', 'Dragon shortsword', 'Dragon scimitar', 'Abyssal whip'])) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [5, 4]);
       } else if (this.wearing('Dragon dagger')) {
         attackRoll = this.trackFactor(DetailKey.PLAYER_ACCURACY_SPEC, attackRoll, [23, 20]);
@@ -514,7 +514,7 @@ export default class PlayerVsNPCCalc extends BaseCalc {
 
       if (this.wearing(['Bandos godsword', 'Saradomin sword'])) {
         maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [11, 10]);
-      } else if (this.wearing(['Armadyl godsword', 'Dragon sword', 'Dragon longsword', "Saradomin's blessed sword"])) {
+      } else if (this.wearing(['Armadyl godsword', 'Dragon shortsword', 'Dragon longsword', "Saradomin's blessed sword"])) {
         maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [5, 4]);
       } else if (this.wearing(['Dragon mace', 'Dragon warhammer', 'Arkan blade'])) {
         maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [3, 2]);
