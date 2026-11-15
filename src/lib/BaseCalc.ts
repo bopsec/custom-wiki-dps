@@ -28,6 +28,8 @@ export interface CalcOpts {
   detailedOutput?: boolean,
   disableMonsterScaling?: boolean,
   usingSpecialAttack?: boolean,
+  /** A Zorya special cast while an empowered attack is available. */
+  zoryaEmpoweredSpec?: boolean,
   overrides?: {
     accuracy?: number,
     attackRoll?: number,
@@ -48,6 +50,7 @@ const DEFAULT_OPTS: Required<InternalOpts> = {
   detailedOutput: false,
   disableMonsterScaling: false,
   usingSpecialAttack: false,
+  zoryaEmpoweredSpec: false,
   noInit: false,
   overrides: {},
 };

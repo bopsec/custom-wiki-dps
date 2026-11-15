@@ -132,3 +132,69 @@ test('spec swap ranking and graph start at the monster current HP', () => {
   expect(graph.points.at(-1)?.hitpoints).toBe(20);
   expect(graph.ranges.every((range) => range.fromHp <= 20 && range.toHp <= 20)).toBe(true);
 });
+
+describe('Zorya back-to-back spec swaps', () => {
+  const setup = () => {
+    const monster = getTestMonster('Abyssal demon', 'Standard', {
+      skills: { hp: 1000 }, inputs: { monsterCurrentHp: 1000 },
+    });
+    const tome = getTestPlayer(monster, {
+      name: 'Tome',
+      specSetup: true,
+      equipment: { weapon: findEquipment("Zorya's tome") },
+    });
+    const finisher = getTestPlayer(monster, {
+      name: 'Finish', equipment: { weapon: findEquipment('Abyssal whip') },
+    });
+    return { monster, tome, finisher };
+  };
+
+  test('matches observed 39 normal, 62 empowered and 85 second-spec max hits', () => {
+    const { monster } = setup();
+    const tome = getTestPlayer(monster, {
+      equipment: { weapon: findEquipment("Zorya's tome") },
+      skills: { magic: 99 },
+      bonuses: { magic_str: 700 },
+    });
+    const normal = new PlayerVsNPCCalc(tome, monster);
+    const spec = new PlayerVsNPCCalc(tome, monster, { usingSpecialAttack: true });
+    const second = new PlayerVsNPCCalc(tome, monster, {
+      usingSpecialAttack: true, zoryaEmpoweredSpec: true,
+    });
+    expect(normal.getMax()).toBe(39);
+    expect(spec.getDistribution().dists.map((dist) => dist.getMax())).toEqual([62, 62, 62, 62]);
+    expect(second.getDistribution().dists[0].getMax()).toBe(85);
+  });
+
+  test('ranks a seven-cast burst with conditional charges and additive second-spec damage', () => {
+    const { monster, tome, finisher } = setup();
+    const calc = new PlayerVsNPCCalc(tome, monster, { usingSpecialAttack: true });
+    const empowered = new PlayerVsNPCCalc(tome, monster, {
+      usingSpecialAttack: true, zoryaEmpoweredSpec: true,
+    });
+    const p = calc.getHitChance();
+    const single = calc.getDistribution().dists[0].expectedHit();
+    const second = empowered.getDistribution().dists[0].expectedHit();
+    const results = computeSpecWeaponSwaps([tome, finisher], monster, { startingEnergy: 100, maxSpecs: 2 });
+    const burst = results.find((result) => result.attacks[0].specCount === 2)!;
+    expect(burst).toBeDefined();
+    expect(burst.remainingEnergy).toBe(0);
+    expect(burst.attacks).toHaveLength(1);
+    expect(burst.attacks[0].specCost).toBe(100);
+    expect(burst.attacks[0].expectedDamage).toBeCloseTo(single * (2 + 4 * p) + p * second);
+    expect(burst.expectedSpecDamage).toBeCloseTo(burst.attacks[0].expectedDamage);
+    expect(burst.attacks[0].maxHit).toBe(
+      calc.getDistribution().dists[0].getMax() * 6 + empowered.getDistribution().dists[0].getMax(),
+    );
+    expect((burst.expectedSeconds - burst.finisherSeconds) / 0.6).toBeCloseTo(6 + 9 * p);
+    expect(results.some((result) => result.attacks.length === 2)).toBe(true);
+  });
+
+  test('requires both sufficient energy and two permitted specs', () => {
+    const { monster, tome, finisher } = setup();
+    for (const options of [{ startingEnergy: 50, maxSpecs: 2 }, { startingEnergy: 100, maxSpecs: 1 }]) {
+      const results = computeSpecWeaponSwaps([tome, finisher], monster, options);
+      expect(results.every((result) => result.attacks.every((attack) => attack.specCount !== 2))).toBe(true);
+    }
+  });
+});

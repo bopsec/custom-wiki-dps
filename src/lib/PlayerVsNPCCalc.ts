@@ -1081,7 +1081,8 @@ export default class PlayerVsNPCCalc extends BaseCalc {
       if (this.isWearingAccursedSceptre()) {
         maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [3, 2]);
       } else if (this.wearing("Zorya's tome")) {
-        maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [160, 100]);
+        // The special and existing empowerment each add 60% of the normal max.
+        maxHit = this.trackFactor(DetailKey.MAX_HIT_SPEC, maxHit, [this.opts.zoryaEmpoweredSpec ? 220 : 160, 100]);
       }
     }
 

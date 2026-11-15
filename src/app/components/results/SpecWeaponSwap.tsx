@@ -529,6 +529,13 @@ const SpecWeaponSwap: React.FC = observer(() => {
         </div>
       )}
       <div className="px-6 py-4 text-sm dark:text-white">
+        {specLoadouts.some((loadout) => loadout.equipment.weapon?.name === "Zorya's tome") && (
+          <p className="mb-4 text-xs text-gray-500 dark:text-gray-300">
+            Back-to-back Tome specs are compared automatically when energy and the spec limit allow two specs.
+            {' '}
+            The empowered second spec adds both 60% damage bonuses for a 2.2× max hit.
+          </p>
+        )}
         {specLoadouts.length === 0 && (
           <div className="mb-4 border border-body-300 dark:border-dark-200 bg-body-100 dark:bg-dark-500 px-4 py-3 text-black dark:text-body-200">
             <div className="mb-2 flex items-center gap-2 font-bold dark:text-white">

@@ -16,6 +16,8 @@ export interface SpecSwapAttack {
   loadoutName: string;
   weaponName: string;
   specCost: number;
+  /** Two immediate Zorya specs, followed by the remaining empowered attacks. */
+  specCount?: number;
   expectedDamage: number;
   maxHit: number;
   accuracy: number;
@@ -421,6 +423,7 @@ const applyAttack = (
     hp: number,
     reductions: DefenceReductions,
     reductionOrder: SpecReductionOrder,
+    specCount?: number,
   ) => AttackCandidate | null,
   dealDamage = true,
 ): SpecState[] => {
@@ -432,6 +435,7 @@ const applyAttack = (
       state.hp,
       state.reductions,
       state.reductionOrder,
+      attack.specCount,
     );
     if (!attackState) {
       continue;
@@ -673,10 +677,88 @@ const getExpectedDamage = (histogram: Map<number, number>): number => {
   return Math.round(expectedDamage);
 };
 
+// Combine damage and accuracy counts after each cast, rather than enumerating
+// all seven hitsplats (which grows exponentially with the max hit).
+const combineOutcomes = (left: AttackOutcome[], right: AttackOutcome[]): AttackOutcome[] => {
+  const combined = new Map<string, AttackOutcome>();
+  for (const a of left) {
+    for (const b of right) {
+      const damage = a.damage + b.damage;
+      const successfulHits = a.successfulHits + b.successfulHits;
+      const key = `${damage}:${successfulHits}`;
+      const probability = a.probability * b.probability;
+      const existing = combined.get(key);
+      if (existing) {
+        existing.probability += probability;
+      } else {
+        combined.set(key, { damage, successfulHits, probability });
+      }
+    }
+  }
+  return [...combined.values()];
+};
+
+const buildZoryaDoubleSpec = (
+  loadout: Player,
+  monster: Monster,
+  specCalc: PlayerVsNPCCalc,
+  loadoutIndex: number,
+): AttackCandidate => {
+  const empowered = new PlayerVsNPCCalc(loadout, monster, {
+    disableMonsterScaling: true,
+    usingSpecialAttack: true,
+    zoryaEmpoweredSpec: true,
+  });
+  const singleOutcomes = (calc: PlayerVsNPCCalc): AttackOutcome[] => calc.getDistribution().dists[0].hits
+    .map((hit) => ({
+      damage: hit.getSum(),
+      successfulHits: Number(hit.anyAccurate()),
+      probability: hit.probability,
+    }));
+  const normalHits = singleOutcomes(specCalc);
+  const empoweredHits = singleOutcomes(empowered);
+  const outcomes: AttackOutcome[] = [];
+  let speed = 0;
+  for (const firstHit of [false, true]) {
+    for (const secondHit of [false, true]) {
+      const first = normalHits.filter((hit) => Boolean(hit.successfulHits) === firstHit);
+      const second = (firstHit ? empoweredHits : normalHits)
+        .filter((hit) => Boolean(hit.successfulHits) === secondHit);
+      let branch = combineOutcomes(first, second);
+      // The second spec consumes one existing charge, then adds three on hit.
+      const stacks = (firstHit ? 2 : 0) + (secondHit ? 3 : 0);
+      const probability = branch.reduce((total, hit) => total + hit.probability, 0);
+      speed += probability * (specCalc.getAttackSpeed() + (firstHit ? 2 : specCalc.getAttackSpeed()) + stacks * 2);
+      for (let i = 0; i < stacks; i++) {
+        branch = combineOutcomes(branch, normalHits);
+      }
+      outcomes.push(...branch);
+    }
+  }
+  const histogram = new Map<number, number>();
+  outcomes.forEach(({ damage, probability }) => {
+    histogram.set(damage, (histogram.get(damage) || 0) + probability);
+  });
+  return {
+    loadoutIndex,
+    loadoutName: `${loadout.name || `Loadout ${loadoutIndex + 1}`} (back-to-back specs)`,
+    weaponName: "Zorya's tome",
+    specCount: 2,
+    specCost: 2 * specCalc.getSpecCost()!,
+    expectedDamage: outcomes.reduce((total, hit) => total + hit.damage * hit.probability, 0),
+    maxHit: max(histogram.keys()) || 0,
+    accuracy: specCalc.getDisplayHitChance(),
+    speed,
+    histogram,
+    outcomes,
+  };
+};
+
 const buildAttackCandidate = (
   loadout: Player,
   loadoutIndex: number,
   monster: Monster,
+  specCount = 1,
 ): AttackCandidate | null => {
   const baseCalc = new PlayerVsNPCCalc(loadout, monster, {
     detailedOutput: false,
@@ -686,6 +768,10 @@ const buildAttackCandidate = (
   const specCost = specCalc?.getSpecCost();
   if (!specCalc || !specCost) {
     return null;
+  }
+
+  if (specCount === 2 && loadout.equipment.weapon?.name === "Zorya's tome") {
+    return buildZoryaDoubleSpec(loadout, monster, specCalc, loadoutIndex);
   }
 
   return {
@@ -739,6 +825,7 @@ const buildAdaptiveFollowUps = (
     hp: number,
     reductions: DefenceReductions,
     reductionOrder: SpecReductionOrder,
+    specCount?: number,
   ) => AttackCandidate | null,
   getFinisherMemory: (reductions: DefenceReductions, reductionOrder: SpecReductionOrder, continuous: boolean) => Float64Array,
 ): SpecSwapAdaptiveRange[] => {
@@ -864,6 +951,7 @@ const applyOutcomeAttack = (
     hp: number,
     reductions: DefenceReductions,
     reductionOrder: SpecReductionOrder,
+    specCount?: number,
   ) => AttackCandidate | null,
   dealDamage = true,
 ): SpecState[] => {
@@ -879,6 +967,7 @@ const applyOutcomeAttack = (
       state.hp,
       state.reductions,
       state.reductionOrder,
+      attack.specCount,
     );
     if (!attackState) {
       continue;
@@ -959,12 +1048,13 @@ export const computeSpecWeaponSwapGraph = (
     hp: number,
     reductions: DefenceReductions,
     reductionOrder: SpecReductionOrder,
+    specCount = 1,
   ): AttackCandidate | null => {
-    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
+    const key = `${specCount}|${loadoutIndex}|${hp}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     if (!attackCache.has(key)) {
       const loadout = loadouts[loadoutIndex];
       const stateMonster = withDefenceReductions(baseMonster, hp, reductions, reductionOrder);
-      setBoundedCache(attackCache, key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
+      setBoundedCache(attackCache, key, buildAttackCandidate(loadout, loadoutIndex, stateMonster, specCount));
     }
     return attackCache.get(key) || null;
   };
@@ -1070,7 +1160,12 @@ export const computeSpecWeaponSwaps = (
 
   const specCandidates = specLoadouts.flatMap(({ loadout, loadoutIndex }): AttackCandidate[] => {
     const candidate = buildAttackCandidate(loadout, loadoutIndex, initialMonster);
-    return candidate ? [candidate] : [];
+    if (!candidate) {
+      return [];
+    }
+    const doubleSpec = loadout.equipment.weapon?.name === "Zorya's tome"
+      ? buildAttackCandidate(loadout, loadoutIndex, initialMonster, 2) : null;
+    return doubleSpec ? [candidate, doubleSpec] : [candidate];
   });
 
   const baseFinishers = normalLoadouts.flatMap(({ loadout, loadoutIndex }): FinishCandidate[] => {
@@ -1088,12 +1183,13 @@ export const computeSpecWeaponSwaps = (
     hp: number,
     reductions: DefenceReductions,
     reductionOrder: SpecReductionOrder,
+    specCount = 1,
   ): AttackCandidate | null => {
-    const key = `${loadoutIndex}|${hp}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
+    const key = `${specCount}|${loadoutIndex}|${hp}|${reductionKey(reductions)}|${reductionOrderKey(reductionOrder)}`;
     if (!attackCache.has(key)) {
       const loadout = loadouts[loadoutIndex];
       const stateMonster = withDefenceReductions(baseMonster, hp, reductions, reductionOrder);
-      setBoundedCache(attackCache, key, buildAttackCandidate(loadout, loadoutIndex, stateMonster));
+      setBoundedCache(attackCache, key, buildAttackCandidate(loadout, loadoutIndex, stateMonster, specCount));
     }
     return attackCache.get(key) || null;
   };
@@ -1159,7 +1255,7 @@ export const computeSpecWeaponSwaps = (
     }
 
     for (const candidate of specCandidates) {
-      if (candidate.specCost > remainingEnergy) {
+      if (candidate.specCost > remainingEnergy || (candidate.specCount || 1) > remainingSpecs) {
         continue;
       }
       const nextStates = trimStates(applyAttack(states, candidate, getAttackCandidate));
@@ -1168,7 +1264,7 @@ export const computeSpecWeaponSwaps = (
       }
       dfs(
         remainingEnergy - candidate.specCost,
-        remainingSpecs - 1,
+        remainingSpecs - (candidate.specCount || 1),
         nextStates,
         [...attacks, candidate],
         specTicks + candidate.speed,
